@@ -1,5 +1,5 @@
 import pandas as pd
-from omicexperiment.filters.filters import FilterExpression, AttributeFilter, GroupByFilter, FlexibleOperatorMixin
+from omicexperiment.filters.filters import FilterExpression, AttributeFilter, GroupByFilter, FlexibleOperatorMixin, AttributeFlexibleOperatorMixin
 
 
 class SampleMinCount(FilterExpression):
@@ -20,7 +20,14 @@ class SampleMaxCount(FilterExpression):
             return df[criteria.index[criteria]]
 
 
-class SampleAttributeFilter(AttributeFilter, FlexibleOperatorMixin):
+class SampleCount(FilterExpression, FlexibleOperatorMixin):
+    def return_value(self, experiment):
+        _op = self._op_function(experiment.counts_df.sum())
+        criteria = _op(self.value)
+        criteria = _op(self.value)
+        return experiment.counts_df.reindex(columns=criteria.index[criteria])
+       
+class SampleAttributeFilter(AttributeFilter, AttributeFlexibleOperatorMixin):
     def return_value(self, experiment):
         _op = self._op_function(experiment.mapping_df)
         criteria = _op(self.value)
@@ -64,8 +71,9 @@ class SampleSumCounts(FilterExpression):
 class Sample(object):
     #not_in = 
     #in_
-    min_count = SampleMinCount()
-    max_count = SampleMaxCount()
+    count = SampleCount()
+    #min_count = SampleMinCount() #?TO DEPRECATE
+    #max_count = SampleMaxCount() #?TO DEPRECATE
     
     att = SampleAttributeFilter()
     c = SampleAttributeFilter()

@@ -1,8 +1,8 @@
 import pandas as pd
-from omicexperiment.filters.filters import FilterExpression, AttributeFilter, GroupByFilter, FlexibleOperatorMixin
+from omicexperiment.filters.filters import FilterExpression, AttributeFilter, GroupByFilter, AttributeFlexibleOperatorMixin
 
 
-class TaxonomyAttributeFilter(AttributeFilter, FlexibleOperatorMixin):
+class TaxonomyAttributeFilter(AttributeFilter, AttributeFlexibleOperatorMixin):
     def return_value(self, experiment):
         _op = self._op_function(experiment._counts_with_tax())
         criteria = _op(self.value)
@@ -10,7 +10,7 @@ class TaxonomyAttributeFilter(AttributeFilter, FlexibleOperatorMixin):
         
 
 class TaxonomyGroupBy(GroupByFilter):
-    TAX_RANKS = ['kingdom', 'phylum', 'class_', 'order', 'family', 'genus', 'species']
+    TAX_RANKS = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
     
     collapse_after_groupby_rank = True
     
@@ -55,10 +55,11 @@ class Taxonomy(object):
     groupby = TaxonomyGroupBy()
     kingdom = TaxonomyAttributeFilter(attribute='kingdom')
     phylum = TaxonomyAttributeFilter(attribute='phylum')
-    class_ = TaxonomyAttributeFilter(attribute='class_')
+    class_ = TaxonomyAttributeFilter(attribute='class')
     order = TaxonomyAttributeFilter(attribute='order')
     family = TaxonomyAttributeFilter(attribute='family')
     genus = TaxonomyAttributeFilter(attribute='genus')
     species = TaxonomyAttributeFilter(attribute='species')
     otu = TaxonomyAttributeFilter(attribute='otu')
- 
+    rank_resolution = TaxonomyAttributeFilter(attribute='rank_resolution')
+    

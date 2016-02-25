@@ -1,11 +1,14 @@
+from pandas import Series
 from omicexperiment import filters
 from omicexperiment.plotting.plot_pygal import plot_table, return_plot, return_plot_tree, plot_to_file
 from omicexperiment.plotting.groups import group_plot_tree
 from omicexperiment.rarefaction import rarefy_dataframe
 from omicexperiment.dataframe import load_dataframe
 
+class Experiment(object):
+    pass
 
-class OmicExperiment(object):
+class OmicExperiment(Experiment):
     def __init__(self, counts_df, mapping_df = None):
         self.counts_df = load_dataframe(counts_df)
         self.mapping_df = load_dataframe(mapping_df)
@@ -15,12 +18,20 @@ class OmicExperiment(object):
         self.Observation = filters.Observation #add in observation variables here
     
     def filter(self, filter_expr):
-        return filter_expr.return_value(self)
-    
+        if isinstance(filter_expr, filters.FilterExpression):
+            return filter_expr.return_value(self)
+        elif isinstance(filter_expr, Series):
+            criteria = series = filter_expr
+            if series.index.name == self.mapping_df.index.name:
+                columns_to_include = series.index[criteria]
+                new_counts = self.counts_df.reindex(columns=columns_to_include)
+                return new_counts
+                
     def efilter(self, filter_expr):
-        new_counts = filter_expr.return_value(self)
+        new_counts = self.filter(filter_expr) 
         return self.__class__(new_counts, self.mapping_df)
-    
+            
+            
     @property
     def samples(self):
         return list(self.counts_df.columns)

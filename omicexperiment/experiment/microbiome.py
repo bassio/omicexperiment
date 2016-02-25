@@ -8,12 +8,13 @@ from omicexperiment.rarefaction import rarefy_dataframe
 class MicrobiomeExperiment(OmicExperiment):
     def __init__(self, counts_df, mapping_df = None, taxonomy_assignment_file=None):
         OmicExperiment.__init__(self, counts_df, mapping_df)
+        self.__init_taxonomy(taxonomy_assignment_file)
         
+    def __init_taxonomy(self, taxonomy_assignment_file):
         self.taxonomy_assignment_file = taxonomy_assignment_file
         self._tax_df = load_taxonomy_dataframe(taxonomy_assignment_file)
         
         self.Taxonomy = Taxonomy
-    
     
     @property
     def tax_index(self):
@@ -24,7 +25,7 @@ class MicrobiomeExperiment(OmicExperiment):
             return self._tax_index
         
     @property
-    def tax_df(self):
+    def taxonomy_df(self):
         try:
             return self._tax_df
         except AttributeError:
@@ -32,14 +33,14 @@ class MicrobiomeExperiment(OmicExperiment):
             return self._tax_df
     
     def _counts_with_tax(self):
-        joined_df = self.tax_df.join(self.counts_df, how='right')
+        joined_df = self.taxonomy_df.join(self.counts_df, how='right')
         return joined_df
     
     
     def efilter(self, filter_expr):
-        new_counts = filter_expr.return_value(self)
-        return self.__class__(new_counts, self.mapping_df, self.taxonomy_assignment_file)
-    
+        new_exp = OmicExperiment.efilter(self, filter_expr)
+        new_exp.__init_taxonomy(self.taxonomy_assignment_file)
+        return new_exp
     
     def to_relative_abundance(self):
         rel_counts = self.counts_df.apply(lambda c: c / c.sum() * 100, axis=0)

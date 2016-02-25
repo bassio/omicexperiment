@@ -4,7 +4,7 @@ import pandas as pd
 def rarefy(series, n):
     series_sum = series.sum()
     rel_abundance = series.apply(lambda c: c / series_sum)
-    sampled = np.random.choice(rel_abundance.index, 100, p=rel_abundance)
+    sampled = np.random.choice(rel_abundance.index, n, p=rel_abundance)
     sampled_series = pd.Series(sampled, name=series.name)
     return sampled_series.value_counts()
 

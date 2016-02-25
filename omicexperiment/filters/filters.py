@@ -56,6 +56,8 @@ class AttributeFilter(FilterExpression):
     def __getattr__(self, name):
         return self.__class__(operator = self.operator, value=self.value, attribute=name)
 
+    def __getitem__(self, item):
+        return self.__class__(operator = self.operator, value=self.value, attribute=item)
 
 class GroupByFilter(FilterExpression):
     def __init__(self, value=None):
@@ -70,5 +72,8 @@ class GroupByFilter(FilterExpression):
 
 class FlexibleOperatorMixin(object):
     def _op_function(self, dataframe):
+        return getattr(dataframe, self.operator)
+
+class AttributeFlexibleOperatorMixin(object):
+    def _op_function(self, dataframe):
         return getattr(dataframe[self.attribute], self.operator)
-    
