@@ -1,0 +1,6 @@
+#SampleID	BarcodeSequence	LinkerPrimerSequence	Description	patient_id	group	asthma	vas	amplicon_conc
+sample0	ACTGAGCG	AAAA	sample0	132	CRSsNP	0	49	4.3
+sample1	AAGAGGCA	AAAA	sample1	315	CRSwNP	1	43	2.3
+sample2	ATCTCAGG	AAAA	sample2	742	CRSsNP	0	23	3.2
+1234	ATGCGCAG	AAAA	1234	927	control	1	87	1
+9876	TAGGCATG	AAAA	9876	538	CRSwNP	1	12	1.3
