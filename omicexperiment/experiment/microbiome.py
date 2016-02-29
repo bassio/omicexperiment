@@ -52,8 +52,10 @@ class MicrobiomeExperiment(OmicExperiment):
     
     
     def rarefy(self, n):
-        cuttoff_df = self.filter(self.Sample.min_count == n)
-        return self.__class__( rarefy_dataframe(cuttoff_df, n), self.mapping_df, self.taxonomy_assignment_file)
+        from omicexperiment.transforms.general import Rarefaction
+        return self.apply(Rarefaction(n))
+        #cuttoff_df = self.filter(self.Sample.min_count == n)
+        #return self.__class__( rarefy_dataframe(cuttoff_df, n), self.mapping_df, self.taxonomy_assignment_file)
         
 
 class QiimeMicrobiomeExperiment(MicrobiomeExperiment):

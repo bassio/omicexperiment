@@ -1,9 +1,12 @@
-from pandas import Series
+import types
+import functools
+from pandas import Series, DataFrame
 from omicexperiment import filters
 from omicexperiment.plotting.plot_pygal import plot_table, return_plot, return_plot_tree, plot_to_file
 from omicexperiment.plotting.groups import group_plot_tree
 from omicexperiment.rarefaction import rarefy_dataframe
 from omicexperiment.dataframe import load_dataframe
+from omicexperiment.transforms.transform import Transform
 
 class Experiment(object):
     pass
@@ -17,6 +20,33 @@ class OmicExperiment(Experiment):
         self.Sample = filters.Sample #add in mapping file variables here for the samples
         self.Observation = filters.Observation #add in observation variables here
     
+    
+    def apply(self, transforms, axis=0):
+        if isinstance(transforms, Transform) \
+        or \
+        (isinstance(transforms, type) and issubclass(transforms, Transform)):
+            transform = transforms #only a single object passed (not a list)
+            return transform.apply_transform(self)
+        
+        elif isinstance(transforms, (types.FunctionType, types.BuiltinFunctionType, functools.partial)):
+            func = transforms #only a single object passed (not a list)
+            transformed_counts_df = DataFrame(self.counts_df.apply(func, axis=axis))
+            
+            #transpose to return the samples as column namess rather than row names
+            if axis == 0 : transformed_counts_df = transformed_counts_df.transpose()
+            
+            return self.with_counts_df(transformed_counts_df)
+        
+        elif isinstance(transforms, list):
+            transformed_exp = self
+            for transform in transforms:
+                transformed_exp = transform.apply_transform(transformed_exp)
+            return transformed_exp
+        
+        else:
+            raise NotImplementedError
+
+        
     def filter(self, filter_expr):
         if isinstance(filter_expr, filters.FilterExpression):
             return filter_expr.return_value(self)
@@ -77,8 +107,10 @@ class OmicExperiment(Experiment):
         return retransposed
     
     def to_relative_abundance(self):
-        rel_counts = self.counts_df.apply(lambda c: c / c.sum() * 100, axis=0)
-        return self.__class__(rel_counts, self.mapping_df)
+        from omicexperiment.transforms.general import RelativeAbundance
+        return RelativeAbundance.apply_transform(self)
+        #rel_counts = self.counts_df.apply(lambda c: c / c.sum() * 100, axis=0)
+        #return self.__class__(rel_counts, self.mapping_df)
     
     def __getitem__(self, value):
         return self.efilter(value)
