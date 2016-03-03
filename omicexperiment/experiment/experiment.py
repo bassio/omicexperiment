@@ -12,8 +12,8 @@ class Experiment(object):
     pass
 
 class OmicExperiment(Experiment):
-    def __init__(self, counts_df, mapping_df = None):
-        self.counts_df = load_dataframe(counts_df)
+    def __init__(self, data_df, mapping_df = None):
+        self.data_df = load_dataframe(data_df)
         self.mapping_df = load_dataframe(mapping_df)
         self.mapping_df.set_index(self.mapping_df.columns[0], drop=False, inplace=True)
         
@@ -30,12 +30,12 @@ class OmicExperiment(Experiment):
         
         elif isinstance(transforms, (types.FunctionType, types.BuiltinFunctionType, functools.partial)):
             func = transforms #only a single object passed (not a list)
-            transformed_counts_df = DataFrame(self.counts_df.apply(func, axis=axis))
+            transformed_data_df = DataFrame(self.data_df.apply(func, axis=axis))
             
             #transpose to return the samples as column namess rather than row names
-            if axis == 0 : transformed_counts_df = transformed_counts_df.transpose()
+            if axis == 0 : transformed_data_df = transformed_data_df.transpose()
             
-            return self.with_counts_df(transformed_counts_df)
+            return self.with_data_df(transformed_data_df)
         
         elif isinstance(transforms, list):
             transformed_exp = self
@@ -54,7 +54,7 @@ class OmicExperiment(Experiment):
             criteria = series = filter_expr
             if series.index.name == self.mapping_df.index.name:
                 columns_to_include = series.index[criteria]
-                new_counts = self.counts_df.reindex(columns=columns_to_include)
+                new_counts = self.data_df.reindex(columns=columns_to_include)
                 return new_counts
                 
     def efilter(self, filter_expr):
@@ -64,18 +64,22 @@ class OmicExperiment(Experiment):
             
     @property
     def samples(self):
-        return list(self.counts_df.columns)
+        return list(self.data_df.columns)
         
     @property
     def observations(self):
-        return list(self.counts_df.index)
+        return list(self.data_df.index)
+    
+    @property
+    def stats_df(self):
+        return self.mapping_df.join(self.data_df.transpose(), how='inner')
     
     def get_plot(self):
-        plot = return_plot(self.counts_df)
+        plot = return_plot(self.data_df)
         return plot
     
     def get_plot_tree(self):
-        plot = return_plot(self.counts_df)
+        plot = return_plot(self.data_df)
         return return_plot_tree(plot)
         
     def plot(self, outputfile=None):
@@ -91,7 +95,7 @@ class OmicExperiment(Experiment):
         if isinstance(mapping_group_col, str):
             group_col = self.mapping_df[mapping_group_col]
         
-        plot, tree = group_plot_tree(self.counts_df, group_col, **kwargs)
+        plot, tree = group_plot_tree(self.data_df, group_col, **kwargs)
         
         if outputfile is not None:
             plot_to_file(plot, tree, outputfile)
@@ -100,7 +104,7 @@ class OmicExperiment(Experiment):
     
     def groupby(self, variable):
         mapping_df = self.mapping_df.copy()
-        transposed = self.counts_df.transpose()
+        transposed = self.data_df.transpose()
         joined_df = transposed.join(mapping_df[[variable]])
         means_df = joined_df.groupby(variable).mean()
         retransposed = means_df.transpose()
@@ -109,23 +113,23 @@ class OmicExperiment(Experiment):
     def to_relative_abundance(self):
         from omicexperiment.transforms.general import RelativeAbundance
         return RelativeAbundance.apply_transform(self)
-        #rel_counts = self.counts_df.apply(lambda c: c / c.sum() * 100, axis=0)
+        #rel_counts = self.data_df.apply(lambda c: c / c.sum() * 100, axis=0)
         #return self.__class__(rel_counts, self.mapping_df)
     
     def __getitem__(self, value):
         return self.efilter(value)
     
-    def with_counts_df(self, new_counts_df):
-        new_exp = self.__class__(new_counts_df, self.mapping_df)
+    def with_data_df(self, new_data_df):
+        new_exp = self.__class__(new_data_df, self.mapping_df)
         return new_exp
     
-    def with_mapping_df(self, new_mapping_df, reindex_counts_df=True):
-        if reindex_counts_df:
-            new_counts_df = self.counts_df.reindex(columns=new_mapping_df.index)
+    def with_mapping_df(self, new_mapping_df, reindex_data_df=True):
+        if reindex_data_df:
+            new_data_df = self.data_df.reindex(columns=new_mapping_df.index)
         else:
-            new_counts_df = self.counts_df
+            new_data_df = self.data_df
             
-        new_exp = self.__class__(new_counts_df, new_mapping_df)
+        new_exp = self.__class__(new_data_df, new_mapping_df)
         return new_exp
     
         

@@ -6,7 +6,7 @@ class TaxonomyAttributeFilter(AttributeFilter, AttributeFlexibleOperatorMixin):
     def return_value(self, experiment):
         _op = self._op_function(experiment._counts_with_tax())
         criteria = _op(self.value)
-        return experiment.counts_df[criteria]
+        return experiment.data_df[criteria]
         
 
 class TaxonomyGroupBy(GroupByFilter):
@@ -23,7 +23,7 @@ class TaxonomyGroupBy(GroupByFilter):
 
     def return_value(self, experiment):
         if self.operator == 'groupby':
-            df = experiment.counts_df
+            df = experiment.data_df
             rank = self.value
             tax_rank = TaxonomyGroupBy.tax_rank
             if rank is not None:

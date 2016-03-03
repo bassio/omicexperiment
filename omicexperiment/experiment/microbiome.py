@@ -6,8 +6,8 @@ from omicexperiment.rarefaction import rarefy_dataframe
 
 
 class MicrobiomeExperiment(OmicExperiment):
-    def __init__(self, counts_df, mapping_df = None, taxonomy_assignment_file=None):
-        OmicExperiment.__init__(self, counts_df, mapping_df)
+    def __init__(self, data_df, mapping_df = None, taxonomy_assignment_file=None):
+        OmicExperiment.__init__(self, data_df, mapping_df)
         self.__init_taxonomy(taxonomy_assignment_file)
         
     def __init_taxonomy(self, taxonomy_assignment_file):
@@ -33,7 +33,7 @@ class MicrobiomeExperiment(OmicExperiment):
             return self._tax_df
     
     def _counts_with_tax(self):
-        joined_df = self.taxonomy_df.join(self.counts_df, how='right')
+        joined_df = self.taxonomy_df.join(self.data_df, how='right')
         return joined_df
     
     
@@ -43,7 +43,7 @@ class MicrobiomeExperiment(OmicExperiment):
         return new_exp
     
     def to_relative_abundance(self):
-        rel_counts = self.counts_df.apply(lambda c: c / c.sum() * 100, axis=0)
+        rel_counts = self.data_df.apply(lambda c: c / c.sum() * 100, axis=0)
         return self.__class__(rel_counts, self.mapping_df, self.taxonomy_assignment_file)
     
     
