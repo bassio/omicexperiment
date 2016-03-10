@@ -50,60 +50,66 @@ def load_taxonomy_assignment_file_as_dataframe(tax_assignments_file):
 
   
 def tax_as_tuples(tax_assignments_file):
-  tax_file_df = load_taxonomy_assignment_file_as_dataframe(tax_assignments_file)
-    
-  otu_to_taxonomy_tuples = []
+    tax_file_df = load_taxonomy_assignment_file_as_dataframe(tax_assignments_file)
+        
+    otu_to_taxonomy_tuples = []
 
-  for row in zip(tax_file_df['otu'], tax_file_df['tax'].apply(lambda c: [c.strip() for c in c.split(";")])):
-    otu = row[0]
-    tax_splt = row[1]
-    tax = ";".join(tax_splt)
-    tax_dict = {}
+    for row in zip(tax_file_df['otu'], tax_file_df['tax'].apply(lambda c: [c.strip() for c in c.split(";")])):
+        otu = row[0]
+        tax_splt = row[1]
+        tax = ";".join(tax_splt)
+        tax_dict = {}
+        
+        kingdom = ""
+        phylum = ""
+        class_ = ""
+        order = ""
+        family = ""
+        genus = ""
+        species = ""
+        
+        for rank_index in range(len(tax_splt)):
+            rank = TAX_RANKS[rank_index]
+            taxon = tax_splt[rank_index].strip()
+            if taxon[3:] == "": #i.e. g__ only or s__ only
+                rank_index -= 1 #the highest rank known is actually the rank up in the tree
+                break
+            else:
+                tax_dict[rank] = taxon
+        
+        highest_res_rank = TAX_RANKS[rank_index]
+        
+        if highest_res_rank == 'kingdom' \
+        and is_kingdom_unassigned(tax_dict[highest_res_rank]):
+            highest_res_rank = 'unassigned'
+            highest_res_assignment = 'Unassigned'
+            
+        else:
+            highest_res_assignment = tax_dict[highest_res_rank]
+            
+        empty_ranks = TAX_RANKS[rank_index+1:]
+        
+        for empty_rank in empty_ranks:
+            tax_dict[empty_rank] = empty_rank[0:1] + "__unidentified ({})".format(highest_res_assignment)
+            
     
-    kingdom = ""
-    phylum = ""
-    class_ = ""
-    order = ""
-    family = ""
-    genus = ""
-    species = ""
-    
-    for rank_index in range(len(tax_splt)):
-      rank = TAX_RANKS[rank_index]
-      tax_dict[rank] = tax_splt[rank_index].strip()
-    else:
-      highest_res_rank = TAX_RANKS[rank_index]
-      
-      if highest_res_rank == 'kingdom' \
-      and is_kingdom_unassigned(tax_dict[highest_res_rank]):
-          highest_res_rank = 'unassigned'
-          highest_res_assignment = 'Unassigned'
-        
-      else:
-          highest_res_assignment = tax_dict[highest_res_rank]
-        
-      empty_ranks = TAX_RANKS[rank_index+1:]
-      for empty_rank in empty_ranks:
-        tax_dict[empty_rank] = empty_rank[0:1] + "__unidentified ({})".format(highest_res_assignment)
-        
-  
-    otu_to_taxonomy_tuples.append((tax_dict['kingdom'], tax_dict['phylum'], tax_dict['class'], tax_dict['order'], tax_dict['family'], tax_dict['genus'], tax_dict['species'], highest_res_rank, tax, otu))
+        otu_to_taxonomy_tuples.append((tax_dict['kingdom'], tax_dict['phylum'], tax_dict['class'], tax_dict['order'], tax_dict['family'], tax_dict['genus'], tax_dict['species'], highest_res_rank, tax, otu))
 
-  return otu_to_taxonomy_tuples
+    return otu_to_taxonomy_tuples
 
   
 def tax_as_index(tax_assignments_file):
-  otu_to_taxonomy_tuples = tax_as_tuples(tax_assignments_file)
-  mi = pd.MultiIndex.from_tuples(otu_to_taxonomy_tuples, names=['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'rank_resolution', 'tax', 'otu'])
-  return mi
+    otu_to_taxonomy_tuples = tax_as_tuples(tax_assignments_file)
+    mi = pd.MultiIndex.from_tuples(otu_to_taxonomy_tuples, names=['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'rank_resolution', 'tax', 'otu'])
+    return mi
 
 
 def tax_as_dataframe(tax_assignments_file):
-  otu_to_taxonomy_tuples = tax_as_tuples(tax_assignments_file)
-  df = pd.DataFrame.from_records(otu_to_taxonomy_tuples, columns=['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'rank_resolution', 'tax', 'otu'])
-  df.set_index('otu', drop=False, inplace=True)
-  df['rank_resolution'] = df['rank_resolution'].astype("category", categories=['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'], ordered=True)
-  return df
+    otu_to_taxonomy_tuples = tax_as_tuples(tax_assignments_file)
+    df = pd.DataFrame.from_records(otu_to_taxonomy_tuples, columns=['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'rank_resolution', 'tax', 'otu'])
+    df.set_index('otu', drop=False, inplace=True)
+    df['rank_resolution'] = df['rank_resolution'].astype("category", categories=['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'], ordered=True)
+    return df
 
     
     
