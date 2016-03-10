@@ -18,9 +18,8 @@ class OmicExperiment(Experiment):
         Experiment.__init__(self, data_df, metadata)
         #self.data_df = load_dataframe(data_df)
         
-        self.mapping_df = load_dataframe(mapping_df)
-        if self.mapping_df is not None:
-            self.mapping_df.set_index(self.mapping_df.columns[0], drop=False, inplace=True)
+        self.mapping_df = load_dataframe(mapping_df, first_col_in_file_as_index=True)
+
         
         self.Sample = filters.Sample #add in mapping file variables here for the samples
         self.Observation = filters.Observation #add in observation variables here
