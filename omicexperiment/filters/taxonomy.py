@@ -31,7 +31,13 @@ class TaxonomyGroupBy(GroupByFilter):
                 df = experiment._counts_with_tax()
                 #df2 = df.groupby(level=taxlevels_to_rank).sum().reset_index()
                 df2 = df.groupby(taxlevels_to_rank).sum().reset_index()
+                
+                #drop extra levels (now columns)
                 df2.drop([rnk for rnk in taxlevels_to_rank if rnk != rank], axis=1, inplace=True)
+                try:
+                    df2.drop(['otu'], axis=1, inplace=True)
+                except ValueError: #not found
+                    pass
                 
                 #further collapse similarly named ranks (e.g. "g__unidentified")
                 if self.collapse_after_groupby_rank:

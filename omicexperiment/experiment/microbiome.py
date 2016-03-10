@@ -6,8 +6,8 @@ from omicexperiment.rarefaction import rarefy_dataframe
 
 
 class MicrobiomeExperiment(OmicExperiment):
-    def __init__(self, data_df, mapping_df = None, taxonomy_assignment_file=None):
-        OmicExperiment.__init__(self, data_df, mapping_df)
+    def __init__(self, data_df, mapping_df = None, taxonomy_assignment_file=None, metadata={}):
+        OmicExperiment.__init__(self, data_df, mapping_df, metadata)
         self.__init_taxonomy(taxonomy_assignment_file)
         
     def __init_taxonomy(self, taxonomy_assignment_file):
@@ -16,6 +16,16 @@ class MicrobiomeExperiment(OmicExperiment):
         
         self.Taxonomy = Taxonomy
     
+    def load_tax_assignment(self, taxonomy_assignment_file):
+        self.taxonomy_assignment_file = taxonomy_assignment_file
+        self._tax_df = load_taxonomy_dataframe(taxonomy_assignment_file)
+        
+        self.Taxonomy = Taxonomy
+    
+    @classmethod
+    def from_experiment(self, exp):
+        return MicrobiomeExperiment(exp.data_df, exp.mapping_df, exp.taxonomy_df, exp.metadata)
+        
     @property
     def tax_index(self):
         try:
@@ -24,6 +34,14 @@ class MicrobiomeExperiment(OmicExperiment):
             self._tax_index = tax_as_index(self.taxonomy_assignment_file)
             return self._tax_index
         
+    @property
+    def data(self):
+        return self.data_df
+    
+    @property
+    def counts_df(self):
+        return self.data_df
+    
     @property
     def taxonomy_df(self):
         try:
@@ -51,12 +69,36 @@ class MicrobiomeExperiment(OmicExperiment):
         return self.efilter(value)
     
     
-    def rarefy(self, n):
+    def rarefy(self, n, num_reps=1):
         from omicexperiment.transforms.general import Rarefaction
-        return self.apply(Rarefaction(n))
-        #cuttoff_df = self.filter(self.Sample.min_count == n)
-        #return self.__class__( rarefy_dataframe(cuttoff_df, n), self.mapping_df, self.taxonomy_assignment_file)
+        return self.apply(Rarefaction(n, num_reps))
         
+    
+    def with_data_df(self, new_data_df):
+        new_exp = self.__class__(new_data_df, self.mapping_df, self.taxonomy_df, self.metadata)
+        
+        return new_exp
+    
+    def with_mapping_df(self, new_mapping_df, reindex_data_df=True):
+        if reindex_data_df:
+            new_data_df = self.data_df.reindex(columns=new_mapping_df.index)
+        else:
+            new_data_df = self.data_df
+            
+        new_exp = self.__class__(new_data_df, new_mapping_df, self.taxonomy_df, self.metadata)
+        
+        return new_exp
+    
+    def with_taxonomy_df(taxonomy_df):
+        pass
 
+    def to_tsv(filepath_or_buf, dataframe='data_df'):
+        df = getattr(self, dataframe)
+        if dataframe == 'data_df':
+            df.to_csv(filepath_or_buf, sep="\t", index_label=True, encoding='utf-8')
+        else:
+            df.to_csv(filepath_or_buf, sep="\t", index_label=True, encoding='utf-8')
+            
+            
 class QiimeMicrobiomeExperiment(MicrobiomeExperiment):
     pass

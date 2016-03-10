@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import hashlib
 from pathlib import Path
 from biom import parse_table
 from biom import Table as BiomTable
@@ -36,6 +37,118 @@ def load_biom_as_dataframe(biom_filepath):
     t = load_biom(biom_filepath)
     return biomtable_to_dataframe(t)
 
+
+def load_fasta(fasta_filepath, calculate_sha1=False):
+    import hashlib
+    from skbio.parse.sequences import parse_fasta
+    
+    descs = []
+    seqs = []
+    for desc, seq in parse_fasta(fasta_filepath):
+        descs.append(desc)
+        seqs.append(seq)
+        
+    fasta_df = pd.DataFrame({'description': descs, 'sequence': seqs})
+
+    del descs
+    del seqs
+
+    #fasta_df.drop('description', axis=1, inplace=True)
+    if calculate_sha1:
+        fasta_df['sha1'] = fasta_df['sequence'].apply(lambda x: hashlib.sha1(x).hexdigest())
+
+    return fasta_df
+
+
+def load_fasta_descriptions(fasta_filepath):
+    import hashlib
+    from skbio.parse.sequences import parse_fasta
+    
+    descs = []
+    for desc, seq in parse_fasta(fasta_filepath):
+        descs.append(desc)
+        
+    fasta_df = pd.DataFrame({'description': descs})
+
+    del descs
+
+    return fasta_df
+
+
+def fasta_df_to_counts_table(fasta_df, desc_to_sampleid_func, index='sha1'):
+    fasta_df['sample'] = fasta_df['description'].apply(desc_to_sampleid_func)
+    
+    if index == 'sha1' \
+    and 'sha1' not in fasta_df.columns:
+        fasta_df['sha1'] = fasta_df['sequence'].apply(lambda x: hashlib.sha1(x).hexdigest())
+    
+    pivoted = fasta_df.pivot_table(index=index, columns='sample', aggfunc='count', fill_value=0)
+    
+    fasta_df.drop(['sample', 'sha1'], axis=1, inplace=True)
+    
+    pivoted.columns = pivoted.columns.droplevel()
+    
+    #sha1_seqs = pivoted.index.to_series().apply(lambda x: hashlib.sha1(x).hexdigest())
+    #sha1_seqs.name = 'sha1'
+    #pivoted.set_index(sha1_seqs, append=True, inplace=True)
+    
+    return pivoted
+
+
+def load_uc_file(uc_filepath):
+    columns = ['Type', 'Cluster', 'Size', 'Id', 'Strand', 'Qlo', 'Tlo', 'Alignment', 'Query', 'Target']
+    df = pd.read_csv(uc_filepath, names=columns, header=None, sep="\t")
+    df.rename(columns={'Query': 'read', 'Cluster': 'cluster'}, inplace=True)
+    df.set_index('read', drop=False, inplace=True)
+    df = df[df['Type'] != 'C']
+    seeds = df[df['Type'] == 'S']
+    df_joined = pd.merge(df, seeds, on='cluster', suffixes=('', '_seed'), left_index=True)
+    df_joined.rename(columns={'read_seed': 'seed'}, inplace=True)
+    return df_joined[['read','cluster', 'seed']]
+
+def load_swarm_otus_file(swarm_otus_filepath):
+    columns = ['amplicon_a', 'amplicon_b', 'differences', 'cluster', 'steps']
+    swarms_df = pd.read_csv(swarm_otus_filepath, \
+                            names=columns, \
+                            sep="\t")
+    duplicate_amplicons = swarms_df.drop_duplicates('amplicon_a')
+    duplicate_amplicons['amplicon_b'] = duplicate_amplicons['amplicon_a']
+    concat_df = pd.concat([swarms_df, duplicate_amplicons]).drop_duplicates('amplicon_b')
+    concat_df.rename(columns={'amplicon_b': 'read'}, inplace=True)
+    concat_df.set_index('read', drop=False, inplace=True)
+    return concat_df[['read', 'cluster']].sort_values('cluster')
+
+
+def load_qiime_otu_assignment_file(otu_assignment_filepath):
+    with open(otu_assignment_filepath) as f:
+        lines = f.readlines()
+    
+    read_to_otu_dict = OrderedDict()
+    read_to_otu_tuples = []
+    
+    read_list = []
+    otu_list = []
+
+    for l in lines:
+        splt = l.split()
+        otu_name = splt[0].strip()
+        reads = splt[1:]
+        for r in reads:
+            read = r.strip()
+            read_list.append(read)
+            otu_list.append(otu_name)
+    
+    read_to_otu_dict = OrderedDict(read=read_list, otu=otu_list)
+    
+    del read_list
+    del otu_list
+    
+    df = pd.DataFrame(read_to_otu_dict, index=read_list)
+    df.set_index('read', drop=False, inplace=True)
+
+    return df
+
+
 def load_taxonomy_dataframe(tax_file_or_tax_df):
     if isinstance(tax_file_or_tax_df, pd.DataFrame):
         return tax_file_or_tax_df
@@ -45,7 +158,7 @@ def load_taxonomy_dataframe(tax_file_or_tax_df):
         assert( tax_fp.exists() )
         return tax_as_dataframe(str(tax_fp))
 
-def load_dataframe(input_file_or_obj):
+def load_dataframe(input_file_or_obj, first_col_in_file_as_index=True):
     if isinstance(input_file_or_obj, str):
         #assume file path
         fp = Path(input_file_or_obj)
@@ -54,10 +167,12 @@ def load_dataframe(input_file_or_obj):
             df = load_biom_as_dataframe(str(fp))
             return df
         elif fp.suffix == '.csv':
-            df = pd.read_csv(str(fp))
+            index_col = 0 if first_col_in_file_as_index else None
+            df = pd.read_csv(str(fp), index_col=index_col)
             return df
         elif fp.suffix == '.tsv':
-            df = pd.read_csv(str(fp), sep='\t')
+            index_col = 0 if first_col_in_file_as_index else None
+            df = pd.read_csv(str(fp), sep='\t', index_col=index_col)
             return df
         
     elif isinstance(input_file_or_obj, pd.DataFrame):

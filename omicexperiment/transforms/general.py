@@ -1,6 +1,8 @@
+from collections import OrderedDict
 import numpy as np
 import pandas as pd
 from omicexperiment.transforms.transform import Transform
+from omicexperiment.taxonomy import tax_as_dataframe
 
 
 class RelativeAbundance(Transform):
@@ -22,38 +24,145 @@ class NumberUniqueObs(Transform):
     
     
 class Rarefaction(Transform):
-    def __init__(self, n):
+    def __init__(self, n, num_reps=1):
         self.n = n
+        self.num_reps = num_reps
+        
         
     @staticmethod
-    def _rarefy_series(series, n):
+    def _rarefy_series(series, n, num_reps=1):
+        
+        series_name = series.name
+        
         series_sum = series.sum()
-        rel_abundance = series.apply(lambda c: c / series_sum)
-        sampled = np.random.choice(rel_abundance.index, n, p=rel_abundance)
-        sampled_series = pd.Series(sampled, name=series.name)
-        return sampled_series.value_counts()
+        
+        if n == 0:
+            sampled_series = pd.Series(0, index=series.index, name=series.name)
+            return sampled_series
+        else:
+            rel_abundance = series.copy().astype(np.float64).apply(lambda c: c / series_sum)
+            sampled = np.random.choice(rel_abundance.index, n, p=rel_abundance)
+            sampled_series = pd.Series(sampled, name=series.name)
+        
+        sampled_value_counts = sampled_series.value_counts()
+        
+        if num_reps == 1:
+            return sampled_value_counts
+        elif num_reps > 1:
+            for r in range(num_reps - 1):
+                next_sampled = np.random.choice(rel_abundance.index, n, p=rel_abundance)
+                next_sampled_series = pd.Series(next_sampled, name=series.name)
+                next_sampled_value_counts = next_sampled_series.value_counts()
+                
+                sampled_value_counts = pd.concat([sampled_value_counts, next_sampled_value_counts], axis=1).fillna(0).mean(axis=1)
+                sampled_value_counts.name = series_name
+                
+                del next_sampled
+                del next_sampled_series
+                del next_sampled_value_counts
+            
+            return sampled_value_counts
 
 
     @staticmethod
-    def _rarefy_dataframe(dataframe, n):
+    def _rarefy_dataframe(dataframe, n, num_reps=1):
         
         rarefied_all = []
-        
+                
         for col in dataframe:
-            rarefied_series = Rarefaction._rarefy_series(dataframe[col], n)
+            rarefied_series = Rarefaction._rarefy_series(dataframe[col], n, num_reps)
             rarefied_all.append(rarefied_series)
         
-        return pd.concat(rarefied_all,axis=1).fillna(0)
+        return pd.concat(rarefied_all,axis=1).fillna(0, downcast='infer')
+    
+    @staticmethod
+    def _transpose_rarefaction_series(series, n):
+        series_copy = series.copy()
+        series_copy.name = n
+        series_copy = pd.DataFrame(series_copy).transpose()
+        series_copy.index.name = 'rarefaction'
+        return series_copy
+    
+    def apply_transform(self, experiment):
+        n = self.n
+        num_reps = self.num_reps
+        cutoff_df = experiment.filter(experiment.Sample.count >= n)
+        rarefied_df = self._rarefy_dataframe(cutoff_df, n, num_reps)
+        return experiment.with_data_df(rarefied_df)
+
+    
+class RarefactionFunction(Rarefaction):
+    def __init__(self, n, num_reps, func, axis=0, agg_rep=None):
+        Rarefaction.__init__(self, n, num_reps)
+        self.func = func
+        self.axis = axis
+        self.agg_rep = agg_rep
+
+    def rarefy_and_apply_func(self, dataframe):
+        
+        concated_df = None
+        
+        for rep in range(0, self.num_reps):
+            rarefied_df = Rarefaction._rarefy_dataframe(dataframe, self.n, 1)
+            func_applied = rarefied_df.apply(self.func, self.axis)
+            func_applied.name = self.n
+                    
+            concated_df = pd.concat([concated_df, func_applied], axis=1)#.fillna(0).mean(axis=1)
+            
+            del rarefied_df
+            del func_applied
+        
+        
+        if self.axis == 0:
+            transposed = concated_df.transpose()
+            transposed.index.name = 'rarefaction'
+            
+            if self.num_reps > 1:
+                #append extra level to index to hold the repetition number
+                rep_index = pd.Index(range(len(transposed.index)), name='rep')
+                transposed.set_index(rep_index, append=True, inplace=True)
+            
+            return transposed
+        
+        else:
+            return concated_df
+            
         
 
     def apply_transform(self, experiment):
-        n = self.n
-        cuttoff_df = experiment.filter(experiment.Sample.count >= n)
-        return experiment.with_data_df( self._rarefy_dataframe(cuttoff_df, n) )
+        cutoff_df = experiment.filter(experiment.Sample.count >= self.n)
+        rarefied_df = self.rarefy_and_apply_func(cutoff_df)
+                
+        return experiment.with_data_df(rarefied_df)
+    
 
-class RarefactionCurve(Transform):
-    def __init__(self, n, step, transform_to_apply):
+class RarefactionCurveFunction(Transform):
+    def __init__(self, n, num_reps, step, func, axis=0):
         self.n = n
+        self.num_reps = num_reps
+        self.step = step
+        self.func = func
+        self.axis = axis
+    
+    def apply_transform(self, experiment):
+        
+        concated_df = None
+        
+        for level in np.arange(0, self.n, self.step):
+            RF = RarefactionFunction(n=level, num_reps=self.num_reps, func=self.func, axis=self.axis)
+            rarefied_exp = RF.apply_transform(experiment)
+            rarefied_df = rarefied_exp.data_df
+            concated_df = pd.concat([concated_df, rarefied_df], levels=['rarefaction', 'rep'])
+            del rarefied_exp
+            del rarefied_df
+                
+        return experiment.with_data_df(concated_df)
+    
+    
+class RarefactionCurve(Transform):
+    def __init__(self, n, num_reps, step, transform_to_apply):
+        self.n = n
+        self.num_reps = num_reps
         self.step = step
         self.transform_to_apply = transform_to_apply
     
@@ -70,3 +179,95 @@ class RarefactionCurve(Transform):
         rarefaction_curve_df = pd.concat(transformed_rarefied_dataframes, axis=0)
         
         return experiment.with_data_df(rarefaction_curve_df)
+    
+    
+class Cluster(Transform):
+    def __init__(self, clusters_df, tax_assignment_file=None):
+        self.clusters_df = clusters_df
+        self.tax_assignment_file = tax_assignment_file
+    
+    @classmethod
+    def from_uc_file(cls, uc_filepath):
+        from omicexperiment.dataframe import load_uc_file
+        clusters_df = load_uc_file(uc_filepath)
+        return cls(clusters_df)
+    
+    @classmethod
+    def from_swarm_otus_file(cls, swarm_otus_filepath):
+        from omicexperiment.dataframe import load_swarm_otus_file
+        clusters_df = load_swarm_otus_file(swarm_otus_filepath)
+        return cls(clusters_df)
+        
+    def apply_transform(self, experiment):
+        read_cluster_df = self.clusters_df
+        
+        cluster_index = read_cluster_df.reindex(experiment.data_df.index)['cluster']
+        
+        #append clusters of reads as an extra level to the index
+        new_data_df = experiment.data_df.set_index(cluster_index, append=True)
+        new_data_df = new_data_df.groupby(level='cluster').sum()
+
+        if self.tax_assignment_file is not None:
+            taxdf_from_new_assignment_file = tax_as_dataframe(self.tax_assignment_file)
+            new_taxonomy_df = pd.merge(taxdf_from_new_assignment_file, read_cluster_df, left_on='otu', right_on='otu')
+            new_taxonomy_df.rename(columns={'read':'otu_old'}, inplace=True)
+            new_taxonomy_df.set_index('otu', drop=False, inplace=True)
+            
+            return experiment.__class__(new_data_df, experiment.mapping_df, new_taxonomy_df, experiment.metadata)
+        else:
+            return experiment.__class__(new_data_df, experiment.mapping_df, experiment.taxonomy_df, experiment.metadata)
+        
+
+class ClusterIntoOTUs(Transform):
+    def __init__(self, otu_assignment_file, tax_assignment_file):
+        self.otu_assignment_file = otu_assignment_file
+        self.tax_assignment_file = tax_assignment_file
+    
+    def __process_assignment_file(self):
+        with open(self.otu_assignment_file) as f:
+            lines = f.readlines()
+        
+        read_to_otu_dict = OrderedDict()
+        read_to_otu_tuples = []
+        
+        read_list = []
+        otu_list = []
+
+        for l in lines:
+            splt = l.split()
+            otu_name = splt[0].strip()
+            reads = splt[1:]
+            for r in reads:
+                read = r.strip()
+                read_list.append(read)
+                otu_list.append(otu_name)
+        
+        read_to_otu_dict = OrderedDict(read=read_list, otu=otu_list)
+        
+        del read_list
+        del otu_list
+        
+        df = pd.DataFrame(read_to_otu_dict, index=read_list)
+        df.index.name = 'read'
+    
+        return df
+    
+    
+    def apply_transform(self, experiment):
+        read_otu_df = self.__process_assignment_file()
+        new_data_df = experiment.data_df.join(read_otu_df).groupby("otu").sum().reset_index().set_index("otu")
+        
+        if self.tax_assignment_file is not None:
+            taxdf_from_new_assignment_file = tax_as_dataframe(self.tax_assignment_file)
+            new_taxonomy_df = pd.merge(taxdf_from_new_assignment_file, read_otu_df, left_on='otu', right_on='otu')
+            new_taxonomy_df.rename(columns={'read':'otu_old'}, inplace=True)
+            new_taxonomy_df.set_index('otu', drop=False, inplace=True)
+            
+            return experiment.__class__(new_data_df, experiment.mapping_df, new_taxonomy_df, experiment.metadata)
+        else:
+            return experiment.__class__(new_data_df, experiment.mapping_df, experiment.taxonomy_df, experiment.metadata)
+        
+
+
+class Dereplicate(Transform):
+    pass

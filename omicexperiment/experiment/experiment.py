@@ -9,13 +9,18 @@ from omicexperiment.dataframe import load_dataframe
 from omicexperiment.transforms.transform import Transform
 
 class Experiment(object):
-    pass
+    def __init__(self, data_df, metadata={}):
+        self.data_df = load_dataframe(data_df)
+        self.metadata = metadata
 
 class OmicExperiment(Experiment):
-    def __init__(self, data_df, mapping_df = None):
-        self.data_df = load_dataframe(data_df)
+    def __init__(self, data_df, mapping_df = None, metadata={}):
+        Experiment.__init__(self, data_df, metadata)
+        #self.data_df = load_dataframe(data_df)
+        
         self.mapping_df = load_dataframe(mapping_df)
-        self.mapping_df.set_index(self.mapping_df.columns[0], drop=False, inplace=True)
+        if self.mapping_df is not None:
+            self.mapping_df.set_index(self.mapping_df.columns[0], drop=False, inplace=True)
         
         self.Sample = filters.Sample #add in mapping file variables here for the samples
         self.Observation = filters.Observation #add in observation variables here
@@ -132,4 +137,48 @@ class OmicExperiment(Experiment):
         new_exp = self.__class__(new_data_df, new_mapping_df)
         return new_exp
     
+    def describe(self, as_dict=False):
+        desc = \
+        (""
+        "Num samples: {num_samples}\n"
+        "Num observations: {num_observations}\n"
+        "Total count: {total_count}\n"
+        "Table density (fraction of non-zero values): {table_density}\n"
+        "\n"
+        "Counts/sample summary:\n"
+        "Min: {min_sample}\n"
+        "Max: {max_sample}\n"
+        "Median: {median_sample}\n"
+        "Mean: {mean_sample}\n"
+        "Std. dev.: {std_sample}\n"
+        "Sample Metadata Categories: None\n"
+        "Observation Metadata Categories: None\n"
+        "\n"
+        "Counts/sample detail:\n"
+        "{sample_counts}"
+        "")
+        
+        d = {}
+        d['num_samples'] = len(self.data_df.columns)
+        d['num_observations'] = len(self.data_df.index)
+        d['total_count'] = self.data_df.sum().sum();
+
+        zero_df = (self.data_df==0).apply(lambda x: x.value_counts()).sum(axis=1)
+        d['table_density'] = float(zero_df[False]) / zero_df.sum()
+
+        sample_sums_df = self.data_df.sum()
+        d['sample_counts'] = sample_sums_df.sort_values().to_string()
+
+        sample_stats_df = sample_sums_df.describe()
+
+        d['min_sample'] = sample_stats_df['min']
+        d['max_sample'] = sample_stats_df['max']
+        d['mean_sample'] = sample_stats_df['mean']
+        d['median_sample'] = sample_stats_df['50%']
+        d['std_sample'] = sample_stats_df['std']
+        
+        if as_dict:
+            return d
+        else:
+            return desc.format(**d)
         
