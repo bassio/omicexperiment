@@ -187,10 +187,12 @@ class Cluster(Transform):
         self.tax_assignment_file = tax_assignment_file
     
     @classmethod
-    def from_uc_file(cls, uc_filepath):
+    def from_uc_file(cls, uc_filepath, tax_assignment_file=None, seed_as_cluster_label=True):
         from omicexperiment.dataframe import load_uc_file
         clusters_df = load_uc_file(uc_filepath)
-        return cls(clusters_df)
+        if seed_as_cluster_label:
+            clusters_df['cluster'] = clusters_df['seed']
+        return cls(clusters_df, tax_assignment_file)
     
     @classmethod
     def from_swarm_otus_file(cls, swarm_otus_filepath):
@@ -207,11 +209,10 @@ class Cluster(Transform):
         new_data_df = experiment.data_df.set_index(cluster_index, append=True)
         new_data_df = new_data_df.groupby(level='cluster').sum()
 
-        if self.tax_assignment_file is not None:
+        if not (self.tax_assignment_file is None):
             taxdf_from_new_assignment_file = tax_as_dataframe(self.tax_assignment_file)
-            new_taxonomy_df = pd.merge(taxdf_from_new_assignment_file, read_cluster_df, left_on='otu', right_on='otu')
-            new_taxonomy_df.rename(columns={'read':'otu_old'}, inplace=True)
-            new_taxonomy_df.set_index('otu', drop=False, inplace=True)
+            new_unique_clusters = read_cluster_df['cluster'].drop_duplicates()
+            new_taxonomy_df = taxdf_from_new_assignment_file.reindex(new_unique_clusters)
             
             return experiment.__class__(new_data_df, experiment.mapping_df, new_taxonomy_df, experiment.metadata)
         else:

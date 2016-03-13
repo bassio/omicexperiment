@@ -40,7 +40,7 @@ def load_biom_as_dataframe(biom_filepath):
 
 def load_fasta(fasta_filepath, calculate_sha1=False):
     import hashlib
-    from skbio.parse.sequences import parse_fasta
+    from omicexperiment.util import parse_fasta
     
     descs = []
     seqs = []
@@ -55,11 +55,48 @@ def load_fasta(fasta_filepath, calculate_sha1=False):
 
     #fasta_df.drop('description', axis=1, inplace=True)
     if calculate_sha1:
-        fasta_df['sha1'] = fasta_df['sequence'].apply(lambda x: hashlib.sha1(x).hexdigest())
+        fasta_df['sha1'] = fasta_df['sequence'].apply(lambda x: hashlib.sha1(x.encode('utf-8')).hexdigest())
 
     return fasta_df
 
+def load_fasta_counts(fasta_filepath, sample_name=None):
+    fasta_df = load_fasta(fasta_filepath, calculate_sha1=True)
+    if sample_name is None:
+        counts = fasta_df['sha1'].value_counts().to_frame(name='count')
+    else:
+        counts = fasta_df['sha1'].value_counts().to_frame(name=sample_name)
+        
+    fasta_df.drop('description', axis=1, inplace=True)
+    
+    fasta_df.set_index('sha1', inplace=True)
+    
+    joined_df = counts.join(fasta_df)
+    joined_df.index.name = 'sha1'
+    
+    return joined_df.drop_duplicates()
 
+
+def counts_table_from_fasta_files(fasta_filepaths, sample_names=None):
+    
+    if sample_names is None:
+        sample_names = [None for i in range(len(fasta_filepaths))]
+                        
+    concated_df = None
+    seq_sha1_df = None
+    
+    for fasta, sample_name in zip(fasta_filepaths, sample_names):
+        fasta_df = load_fasta_counts(fasta, fasta)
+        seq_sha1_df = pd.concat([seq_sha1_df, fasta_df['sequence']])
+        fasta_df.drop('sequence', axis=1, inplace=True)
+        concated_df = pd.concat([concated_df, fasta_df])
+        del fasta_df
+        
+    concated_df = concated_df.fillna(0).groupby(level=0).sum()
+    concated_df.set_index(seq_sha1_df.drop_duplicates(), append=True, inplace=True)
+    
+    return concated_df
+
+    
 def load_fasta_descriptions(fasta_filepath):
     import hashlib
     from skbio.parse.sequences import parse_fasta
@@ -99,12 +136,24 @@ def load_uc_file(uc_filepath):
     columns = ['Type', 'Cluster', 'Size', 'Id', 'Strand', 'Qlo', 'Tlo', 'Alignment', 'Query', 'Target']
     df = pd.read_csv(uc_filepath, names=columns, header=None, sep="\t")
     df.rename(columns={'Query': 'read', 'Cluster': 'cluster'}, inplace=True)
-    df.set_index('read', drop=False, inplace=True)
+    
+    #check for size annotations and take them away
+    sizes_in_labels = df['read'].apply(lambda x: ';size=' in x).any()
+
+    if sizes_in_labels:
+        df['read'] = df['read'].apply(lambda x: x.split(';size=')[0])
+        
+    
     df = df[df['Type'] != 'C']
     seeds = df[df['Type'] == 'S']
     df_joined = pd.merge(df, seeds, on='cluster', suffixes=('', '_seed'), left_index=True)
     df_joined.rename(columns={'read_seed': 'seed'}, inplace=True)
+    
+    df_joined.set_index('read', drop=False, inplace=True)
+    
     return df_joined[['read','cluster', 'seed']]
+
+
 
 def load_swarm_otus_file(swarm_otus_filepath):
     columns = ['amplicon_a', 'amplicon_b', 'differences', 'cluster', 'steps']
