@@ -31,58 +31,42 @@ class Rarefaction(Transform):
         
     @staticmethod
     def _rarefy_series(series, n, num_reps=1):
-        
+
         series_name = series.name
-        
-        series_sum = series.sum()
-        
+
         if n == 0:
             sampled_series = pd.Series(0, index=series.index, name=series.name)
             return sampled_series
-        else:
-            rel_abundance = series.copy().astype(np.float64).apply(lambda c: c / series_sum)
-            sampled = np.random.choice(rel_abundance.index, n, p=rel_abundance)
-            sampled_series = pd.Series(sampled, name=series.name)
         
-        sampled_value_counts = sampled_series.value_counts()
-        
+        sampled_series = series.sample(n, replace=True, weights=series)
+        sampled_value_counts = sampled_series.index.value_counts()
+
         if num_reps == 1:
             return sampled_value_counts
         elif num_reps > 1:
             for r in range(num_reps - 1):
-                next_sampled = np.random.choice(rel_abundance.index, n, p=rel_abundance)
-                next_sampled_series = pd.Series(next_sampled, name=series.name)
-                next_sampled_value_counts = next_sampled_series.value_counts()
-                
-                sampled_value_counts = pd.concat([sampled_value_counts, next_sampled_value_counts], axis=1).fillna(0).mean(axis=1)
+                next_sampled_series = series.sample(n, replace=True, weights=series)
+                next_sampled_value_counts = next_sampled_series.index.value_counts()
+
+                sampled_value_counts = pd.concat([sampled_value_counts, next_sampled_value_counts], axis=1).fillna(0).sum(axis=1)
                 sampled_value_counts.name = series_name
-                
-                del next_sampled
+
                 del next_sampled_series
                 del next_sampled_value_counts
+            
+            sampled_value_counts = sampled_value_counts.sample(n, replace=True, weights=sampled_value_counts).index.value_counts()
+            sampled_value_counts.name = series_name
             
             return sampled_value_counts
 
 
     @staticmethod
     def _rarefy_dataframe(dataframe, n, num_reps=1):
-        
-        rarefied_all = []
-                
-        for col in dataframe:
-            rarefied_series = Rarefaction._rarefy_series(dataframe[col], n, num_reps)
-            rarefied_all.append(rarefied_series)
-        
-        return pd.concat(rarefied_all,axis=1).fillna(0, downcast='infer')
+        rarefied_df = dataframe.apply(Rarefaction._rarefy_series, n=n, num_reps=num_reps)
+        rarefied_df.fillna(0, inplace=True, downcast='infer')
+        return rarefied_df
     
-    @staticmethod
-    def _transpose_rarefaction_series(series, n):
-        series_copy = series.copy()
-        series_copy.name = n
-        series_copy = pd.DataFrame(series_copy).transpose()
-        series_copy.index.name = 'rarefaction'
-        return series_copy
-    
+
     def apply_transform(self, experiment):
         n = self.n
         num_reps = self.num_reps
@@ -132,25 +116,32 @@ class RarefactionFunction(Rarefaction):
     def apply_transform(self, experiment):
         cutoff_df = experiment.filter(experiment.Sample.count >= self.n)
         rarefied_df = self.rarefy_and_apply_func(cutoff_df)
-                
+        
+        if self.agg_rep != None:
+            rarefied_df = rarefied_df.groupby(level='rarefaction').apply(self.agg_rep)
+            
         return experiment.with_data_df(rarefied_df)
     
 
 class RarefactionCurveFunction(Transform):
-    def __init__(self, n, num_reps, step, func, axis=0):
+    def __init__(self, n, num_reps, step, func, axis=0, agg_rep=None):
         self.n = n
         self.num_reps = num_reps
         self.step = step
         self.func = func
         self.axis = axis
-    
+        self.agg_rep = agg_rep
+        
     def apply_transform(self, experiment):
+        
+        cutoff_exp = experiment.efilter(experiment.Sample.count >= self.n)
+        
         
         concated_df = None
         
         for level in np.arange(0, self.n, self.step):
-            RF = RarefactionFunction(n=level, num_reps=self.num_reps, func=self.func, axis=self.axis)
-            rarefied_exp = RF.apply_transform(experiment)
+            RF = RarefactionFunction(n=level, num_reps=self.num_reps, func=self.func, axis=self.axis, agg_rep=self.agg_rep)
+            rarefied_exp = RF.apply_transform(cutoff_exp)
             rarefied_df = rarefied_exp.data_df
             concated_df = pd.concat([concated_df, rarefied_df], levels=['rarefaction', 'rep'])
             del rarefied_exp

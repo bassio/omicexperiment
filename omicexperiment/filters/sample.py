@@ -39,14 +39,14 @@ class SampleGroupBy(GroupByFilter):
         if self.operator == 'groupby':
             if self.value is not None:
                 mapping_df = experiment.mapping_df.copy()
-                transposed = experiment.data_df.transpose()
+                transposed = experiment.to_relative_abundance().data_df.transpose()
                 joined_df = transposed.join(mapping_df[[self.value]])
                 means_df = joined_df.groupby(self.value).mean()
                 retransposed = means_df.transpose()
             else:
                 retransposed = experiment.data_df.copy()
             
-            return retransposed.apply(lambda c: c / c.sum() * 100, axis=0)
+            return retransposed
             
 
 class SampleGroupBySum(GroupByFilter):
