@@ -1,8 +1,10 @@
 from collections import OrderedDict
 import numpy as np
 import pandas as pd
+from scipy.spatial.distance import pdist, cdist, squareform
 from omicexperiment.transforms.transform import Transform
 from omicexperiment.taxonomy import tax_as_dataframe
+from omicexperiment.util import hybridmethod
 
 
 class RelativeAbundance(Transform):
@@ -11,9 +13,17 @@ class RelativeAbundance(Transform):
         rel_counts = experiment.data_df.apply(lambda c: c / c.sum() * 100, axis=0)
         return experiment.with_data_df(rel_counts)
     
-    
+
+def number_unique_obs(series):
+    return (series > 0).sum()
+
+
 class NumberUniqueObs(Transform):
     name = 'number_unique_obs'
+    
+    @staticmethod
+    def _number_unique_obs(series):
+        return (series > 0).sum()
     
     @classmethod
     def apply_transform(cls, experiment):
@@ -90,7 +100,7 @@ class RarefactionFunction(Rarefaction):
             rarefied_df = Rarefaction._rarefy_dataframe(dataframe, self.n, 1)
             func_applied = rarefied_df.apply(self.func, self.axis)
             func_applied.name = self.n
-                    
+            
             concated_df = pd.concat([concated_df, func_applied], axis=1)#.fillna(0).mean(axis=1)
             
             del rarefied_df
@@ -209,6 +219,17 @@ class Cluster(Transform):
         else:
             return experiment.__class__(new_data_df, experiment.mapping_df, experiment.taxonomy_df, experiment.metadata)
         
+
+class DistanceMatrix(Transform):
+    def __init__(self, distance_metric):
+        self.distance_metric = distance_metric
+        
+    def apply_transform(self, experiment):
+        df = experiment.data_df.transpose()
+        dm = cdist(df, df, self.distance_metric)
+        distance_matrix_df = pd.DataFrame(dm, index=df.index, columns=df.index)
+        return experiment.with_data_df(distance_matrix_df)
+    
 
 class ClusterIntoOTUs(Transform):
     def __init__(self, otu_assignment_file, tax_assignment_file):
