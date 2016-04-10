@@ -1,4 +1,5 @@
 # The *omicexperiment* python package
+
 The omicexperiment package is an open-source, BSD-licensed, Python 3 package for analysis of dataframes of 'omic experiments', built upon the solid foundations of the Python scientific stack.
 
 The omicexperiment package has the goal of providing a pleasant API for *rapid* analysis of 'omic experiments' in interactive environments.
@@ -29,19 +30,24 @@ The philosophy of this package is to build upon solid foundations of the python 
     
 
 ## Installation
+
 Just clone the git repository.
 Hopefully very shortly, the package will be uploaded to PyPi and will be pip-installable.
 
 
 ## License
+
 This package is released as open-source, under a BSD License. Please see COPYING.txt.
 
 ## Documentation
+
 Please see the doc folder in the package, it contains Jupyter notebooks that runs you through most of the current package functionality. 
 
 ## Acknowledgements
+
 Thank you to all the great python bioinformatics and data science community for releasing their code as open source.
 
 ## Contributing and use in your research
+
 Please be advised that at this stage, this package is still alpha software. Testing is still not implemented so be careful. But if you are interested in contributing to this project, please contact. Contributors are welcome to improve the software.
 Nowadays, I expect the package to continue growing slowly as I add functionality and improvements as long as I need it in my own research. I will be initially focusing on developing the MicrobiomeExperiment part. 
