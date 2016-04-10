@@ -28,7 +28,7 @@ requires = [
     ]
 
 setup(name=package_name,
-      packages=[package_name]
+      packages=[package_name],
       version=version,
       license='BSD',
       description="For analysis of omic experiments.",
