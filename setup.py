@@ -9,6 +9,8 @@ from setuptools import setup, find_packages
 # which is itself based off Flask's setup.py https://github.com/mitsuhiko/flask/blob/master/setup.py
 _version_re = re.compile(r'__version__\s+=\s+(.*)')
 
+package_name = "omicexperiment"
+
 with open('omicexperiment/__init__.py', 'rb') as f:
     hit = _version_re.search(f.read().decode('utf-8')).group(1)
     version = str(ast.literal_eval(hit))
@@ -25,10 +27,11 @@ requires = [
     'pygal >= 2.1.1'
     ]
 
-setup(name='omicexperiment',
+setup(name=package_name,
+      packages=[package_name]
       version=version,
       license='BSD',
-      description='omicexperiment',
+      description="For analysis of omic experiments.",
       long_description=README + '\n\n' +  CHANGES,
       classifiers=[
         "Programming Language :: Python",
@@ -40,6 +43,7 @@ setup(name='omicexperiment',
       maintainer="Ahmed Bassiouni",
       maintainer_email="ahmedbassi@gmail.com",
       url='https://github.com/bassio/omicexperiment',
+      download_url = 'https://github.com/bassio/omicexperiment/tarball/' + version,
       keywords='bioinformatics',
       packages=find_packages(),
       include_package_data=True,
