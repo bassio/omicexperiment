@@ -37,7 +37,7 @@ Hopefully very shortly, the package will be uploaded to PyPi and will be pip-ins
 This package is released as open-source, under a BSD License. Please see COPYING.txt.
 
 ## Documentation
-Please see the docs folder in the package, it contains Jupyter notebooks that runs you through most of the current package functionality. 
+Please see the doc folder in the package, it contains Jupyter notebooks that runs you through most of the current package functionality. 
 
 ## Acknowledgements
 Thank you to all the great python bioinformatics and data science community for releasing their code as open source.
