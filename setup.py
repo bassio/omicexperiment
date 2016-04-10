@@ -17,7 +17,7 @@ with open('omicexperiment/__init__.py', 'rb') as f:
 
 
 here = os.path.abspath(os.path.dirname(__file__))
-README = open(os.path.join(here, 'README.txt')).read()
+README = open(os.path.join(here, 'README.md')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
 
 requires = [
@@ -28,7 +28,6 @@ requires = [
     ]
 
 setup(name=package_name,
-      packages=[package_name],
       version=version,
       license='BSD',
       description="For analysis of omic experiments.",
