@@ -18,7 +18,13 @@ with open('omicexperiment/__init__.py', 'rb') as f:
 
 here = os.path.abspath(os.path.dirname(__file__))
 README = open(os.path.join(here, 'README.md')).read()
-CHANGES = open(os.path.join(here, 'CHANGES.txt')).read()
+CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
+
+try:
+    import pypandoc
+    long_description = pypandoc.convert(README + '\n\n' +  CHANGES, 'md', 'rst')
+except ImportError:
+    long_description= README + '\n\n' + CHANGES
 
 requires = [
     'numpy >= 1.10.4',
@@ -31,7 +37,7 @@ setup(name=package_name,
       version=version,
       license='BSD',
       description="For analysis of omic experiments.",
-      long_description=README + '\n\n' +  CHANGES,
+      long_description=long_description,
       classifiers=[
         "Programming Language :: Python",
         "License :: OSI Approved :: BSD License",
