@@ -2,6 +2,9 @@ import os
 import re
 import ast
 from setuptools import setup, find_packages
+from setuptools.command.build_ext import build_ext
+
+package_name = "omicexperiment"
 
 
 # version parsing from __init__ pulled from scikit-bio
@@ -9,7 +12,20 @@ from setuptools import setup, find_packages
 # which is itself based off Flask's setup.py https://github.com/mitsuhiko/flask/blob/master/setup.py
 _version_re = re.compile(r'__version__\s+=\s+(.*)')
 
-package_name = "omicexperiment"
+
+# Bootstrap setup.py with numpy
+# from the solution by coldfix http://stackoverflow.com/a/21621689/579416
+class build_ext_numpy(build_ext):
+    def finalize_options(self):
+        _build_ext.finalize_options(self)
+        # Prevent numpy from thinking it is still in its setup process:
+        if isinstance(__builtins__, dict):
+            __builtins__["__NUMPY_SETUP__"] = False
+        else:
+            __builtins__.__NUMPY_SETUP__ = False
+        import numpy
+        self.include_dirs.append(numpy.get_include())
+
 
 with open('omicexperiment/__init__.py', 'rb') as f:
     hit = _version_re.search(f.read().decode('utf-8')).group(1)
@@ -22,16 +38,21 @@ CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
 
 try:
     import pypandoc
-    long_description = pypandoc.convert(README + '\n\n' +  CHANGES, 'md', 'rst')
+    long_description = pypandoc.convert(README + '\n\n' +  CHANGES, 'rst', format='md')
 except ImportError:
     long_description= README + '\n\n' + CHANGES
 
-requires = [
-    'numpy >= 1.10.4',
+setup_requires = [
+    'numpy >= 1.10.4'
+    ]
+
+install_requires = [
+    'scipy>=0.16.1',
     'pandas >= 0.17.1',
     'biom-format >= 2.1.5',
-    'pygal >= 2.1.1'
-    ]
+    'pygal >= 2.1.1',
+    'scikit-bio==0.4.2']
+
 
 setup(name=package_name,
       version=version,
@@ -43,6 +64,7 @@ setup(name=package_name,
         "License :: OSI Approved :: BSD License",
         "Topic :: Scientific/Engineering :: Bio-Informatics",
         ],
+      cmdclass={'build_ext': build_ext_numpy},
       author='Ahmed Bassiouni',
       author_email='ahmedbassi@gmail.com',
       maintainer="Ahmed Bassiouni",
@@ -54,7 +76,8 @@ setup(name=package_name,
       include_package_data=True,
       zip_safe=False,
       test_suite='omicexperiment.tests',
-      install_requires=requires,
+      install_requires=install_requires,
+      setup_requires=setup_requires,
       entry_points="""\
       """,
       )
