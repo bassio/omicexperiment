@@ -34,6 +34,17 @@ The philosophy of this package is to build upon solid foundations of the python 
 Just clone the git repository.
 Hopefully very shortly, the package will be uploaded to PyPi and will be pip-installable.
 
+## Dependencies
+
+Current omicexperiment dependencies:
+
+- numpy
+- scipy
+- pandas
+- scikit-bio
+- biom-format
+- lxml
+- pygal
 
 ## License
 
@@ -41,7 +52,7 @@ This package is released as open-source, under a BSD License. Please see COPYING
 
 ## Documentation
 
-Please see the doc folder in the package, it contains Jupyter notebooks that runs you through most of the current package functionality. 
+Please see the doc folder in the package (https://github.com/bassio/omicexperiment/tree/master/doc), it contains Jupyter notebooks that runs you through most of the current package functionality. 
 
 ## Acknowledgements
 

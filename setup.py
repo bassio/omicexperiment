@@ -2,7 +2,7 @@ import os
 import re
 import ast
 from setuptools import setup, find_packages
-from setuptools.command.build_ext import build_ext
+from setuptools.command.build_ext import build_ext as _build_ext
 
 package_name = "omicexperiment"
 
@@ -15,14 +15,12 @@ _version_re = re.compile(r'__version__\s+=\s+(.*)')
 
 # Bootstrap setup.py with numpy
 # from the solution by coldfix http://stackoverflow.com/a/21621689/579416
-class build_ext_numpy(build_ext):
+class build_ext_numpy(_build_ext):
     def finalize_options(self):
         _build_ext.finalize_options(self)
         # Prevent numpy from thinking it is still in its setup process:
-        if isinstance(__builtins__, dict):
-            __builtins__["__NUMPY_SETUP__"] = False
-        else:
-            __builtins__.__NUMPY_SETUP__ = False
+        import builtins
+        builtins.__NUMPY_SETUP__ = False
         import numpy
         self.include_dirs.append(numpy.get_include())
 
@@ -47,9 +45,11 @@ setup_requires = [
     ]
 
 install_requires = [
+    'numpy >= 1.10.4',
     'scipy>=0.16.1',
     'pandas >= 0.17.1',
     'biom-format >= 2.1.5',
+    'lxml>=3.5.0',
     'pygal >= 2.1.1',
     'scikit-bio==0.4.2']
 
