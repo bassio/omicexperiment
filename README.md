@@ -34,6 +34,8 @@ The philosophy of this package is to build upon solid foundations of the python 
 Just clone the git repository.
 Hopefully very shortly, the package will be uploaded to PyPi and will be pip-installable.
 
+Due to bugs in handling numpy installation in setuptools, it is better to install numpy first using 'pip install numpy'.
+
 ## Dependencies
 
 Current omicexperiment dependencies:
