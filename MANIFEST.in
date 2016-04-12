@@ -6,3 +6,4 @@ include README.md
 include requirements.txt
 include setup.cfg
 include doc/*.ipynb doc/*.md doc/*.txt doc/*.tsv doc/*.biom
+recursive-include tests/data *
