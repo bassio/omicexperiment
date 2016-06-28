@@ -95,7 +95,17 @@ def group_label_positions(tree, group_col, pad):
   
   y = return_y_position_group_label(tree)
   
+<<<<<<< HEAD
   for i, kv in enumerate(rects_dict.iteritems()):
+=======
+  try:
+    rects_dict_iteritems = rects_dict.iteritems
+  except AttributeError: #python3
+    rects_dict_iteritems = rects_dict.items
+
+  
+  for i, kv in enumerate(rects_dict_iteritems()):
+>>>>>>> 0d1b27e06abfcfcec83d67ebc5842b2954537620
     k,grp_rects = kv
     x1,x2 = return_rects_first_and_last_x(grp_rects)
     mid_x = (x1 + x2) / 2
@@ -110,7 +120,18 @@ def add_group_labels(tree, group_col, pad):
   axis_x = tree.xpath('//g[@class="axis x"]')[0]
   lbls_dict = group_label_positions(tree, group_col, pad)
   rand_grey = 200
+<<<<<<< HEAD
   for lbl, pos in lbls_dict.iteritems():
+=======
+  
+  try:
+    lbls_dict_iteritems = lbls_dict.iteritems
+  except AttributeError: #python3
+    lbls_dict_iteritems = lbls_dict.items
+
+  
+  for lbl, pos in lbls_dict_iteritems():
+>>>>>>> 0d1b27e06abfcfcec83d67ebc5842b2954537620
     
     l = etree.Element("line", x1=str(pos.x1), x2=str(pos.x2), y1=str(pos.y), y2=str(pos.y), style="stroke:rgb({x}, {x}, {x});stroke-width:1".format(x=str(rand_grey)))
     v1 = etree.Element("line", x1=str(pos.x1), x2=str(pos.x1), y1=str(pos.y-3), y2=str(pos.y+3), style="stroke:rgb({x}, {x}, {x});stroke-width:1".format(x=str(rand_grey)))

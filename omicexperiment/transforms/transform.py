@@ -94,3 +94,4 @@ class FlexibleOperatorMixin(object):
 class AttributeFlexibleOperatorMixin(object):
     def _op_function(self, dataframe):
         return getattr(dataframe[self.attribute], self.operator)
+

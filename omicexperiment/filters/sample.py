@@ -1,4 +1,5 @@
 import pandas as pd
+<<<<<<< HEAD
 from omicexperiment.transforms.transform import Filter, AttributeFilter, GroupByTransform, FlexibleOperatorMixin, AttributeFlexibleOperatorMixin
 
 
@@ -9,8 +10,6 @@ class SampleMinCount(Filter):
             df = experiment.data_df
             criteria = (df.sum() >= self.value)
             return df[criteria.index[criteria]]
-    
-
 
 
 class SampleMaxCount(Filter):

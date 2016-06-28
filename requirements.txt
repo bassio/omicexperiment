@@ -2,4 +2,10 @@ numpy >= 1.10.4
 pandas >= 0.17.1
 biom-format >= 2.1.5
 pygal >= 2.1.1
+<<<<<<< HEAD
 scipy
+=======
+lxml>=3.5.0
+scipy>=0.16.1
+scikit-bio==0.4.2
+>>>>>>> 0d1b27e06abfcfcec83d67ebc5842b2954537620

@@ -55,8 +55,7 @@ class TaxonomyGroupBy(GroupByTransform):
                 df2.index = pd.Index([i if (i != '') else 'Unassigned' for i in df2.index], name=rank)
                 return df2
             else:
-                return df
-	      
+                return df      
 	      
     def __eapply__(self, experiment):
         grouped_tax_df = self.__dapply__(experiment)

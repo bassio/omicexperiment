@@ -37,7 +37,7 @@ class NumberUniqueObs(Transform):
         transposed_transformed_df = self.__dapply__(experiment)
         return experiment.with_data_df(transposed_transformed_df)
 
-    
+
 class Rarefaction(Transform):
     def __init__(self, n, num_reps=1):
         self.n = n
@@ -130,7 +130,7 @@ class RarefactionFunction(Rarefaction):
         
         else:
             return concated_df
-            
+
 
     def __dapply__(self, experiment):
         cutoff_df = experiment.filter(experiment.Sample.count >= self.n)
@@ -156,8 +156,7 @@ class RarefactionCurveFunction(Transform):
         self.agg_rep = agg_rep
     
     
-    def __dapply__(self, experiment):
-        
+    def __dapply__(self, experiment):        
         cutoff_exp = experiment.efilter(experiment.Sample.count >= self.n)
         
         
@@ -170,7 +169,7 @@ class RarefactionCurveFunction(Transform):
             concated_df = pd.concat([concated_df, rarefied_df], levels=['rarefaction', 'rep'])
             del rarefied_exp
             del rarefied_df
-                
+            
         return concated_df
     
     
@@ -206,8 +205,7 @@ class RarefactionCurve(Transform):
     def __eapply__(self, experiment):
         rarefaction_curve_df = self.__dapply__(experiment)
         return experiment.with_data_df(rarefaction_curve_df)
-    
-    
+        
     
 class Cluster(Transform):
     def __init__(self, clusters_df, tax_assignment_file=None):
@@ -261,7 +259,7 @@ class DistanceMatrix(Transform):
         distance_matrix_df = self.__dapply__(experiment)
         return experiment.with_data_df(distance_matrix_df)
     
-    
+
 class ClusterIntoOTUs(Transform):
     def __init__(self, otu_assignment_file, tax_assignment_file):
         self.otu_assignment_file = otu_assignment_file
@@ -315,3 +313,26 @@ class ClusterIntoOTUs(Transform):
 
 class Dereplicate(Transform):
     pass
+
+
+class BinObservations(Transform):
+    def __init__(self, observations_to_bin, bin_groupname='Other'):
+        self.observations_to_bin = observations_to_bin
+        self.bin_groupname = bin_groupname
+    
+    def __dapply__(self, experiment):
+        new_df = experiment.data_df.copy()
+
+        #add sum of the other
+        new_df.loc[self.bin_groupname] = new_df.loc[self.observations_to_bin].sum()
+
+        #remove other
+        without_binned_obs_df = new_df.loc[~new_df.index.isin(self.observations_to_bin)]
+        
+        return without_binned_obs_df
+        
+
+    def __eapply__(self, experiment)
+        without_binned_obs_df = self.__dapply__(experiment)
+        return experiment.with_data_df(without_binned_obs_df)
+        
