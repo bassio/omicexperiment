@@ -14,9 +14,9 @@ class AlphaDiversity(Transform):
         else:
             self.metric = metric
         
-    def apply_transform(self, experiment):
+    def __dapply__(self, experiment):
         rf = RarefactionFunction(n=250, num_reps=10, func=self.metric, axis=0, agg_rep=np.mean)
-        new_exp = rf.apply_transform(exp)
+        new_exp = rf.__dapply__(exp)
 
         shannon = new_exp.data_df.transpose()[250]
         shannon.name = 'shannon'
@@ -27,10 +27,13 @@ class BetaDiversity(Transform):
     def __init__(self, distance_metric):
         self.distance_metric = distance_metric
         
-    def apply_transform(self, experiment):
+    def __dapply__(self, experiment):
         df = experiment.data_df.transpose()
         dm = cdist(df, df, self.distance_metric)
         distance_matrix_df = pd.DataFrame(dm, index=df.index, columns=df.index)
+        return distance_matrix_df
+    
+    def __eapply__(self, experiment):
+        distance_matrix_df = self.__dapply__(experiment)
         return experiment.with_data_df(distance_matrix_df)
-    
-    
+      

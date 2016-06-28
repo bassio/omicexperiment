@@ -26,12 +26,17 @@ class NumberUniqueObs(Transform):
         return (series > 0).sum()
     
     @classmethod
-    def apply_transform(cls, experiment):
+    def __dapply__(cls, experiment):
         transformed_series = (experiment.data_df > 0).sum().transpose()
         transformed_series.name = cls.name
         transposed_transformed_df = pd.DataFrame(transformed_series).transpose()
-        return experiment.with_data_df(transposed_transformed_df)
+        return transposed_transformed_df
     
+    @classmethod
+    def __eapply__(cls, experiment):
+        transposed_transformed_df = self.__dapply__(experiment)
+        return experiment.with_data_df(transposed_transformed_df)
+
     
 class Rarefaction(Transform):
     def __init__(self, n, num_reps=1):
@@ -76,12 +81,17 @@ class Rarefaction(Transform):
         rarefied_df.fillna(0, inplace=True, downcast='infer')
         return rarefied_df
     
-
-    def apply_transform(self, experiment):
+    
+    def __dapply__(self, experiment):
         n = self.n
         num_reps = self.num_reps
         cutoff_df = experiment.filter(experiment.Sample.count >= n)
         rarefied_df = self._rarefy_dataframe(cutoff_df, n, num_reps)
+        return rarefied_df
+    
+    
+    def __eapply__(self, experiment):
+        rarefied_df = self.__dapply__(experiment)
         return experiment.with_data_df(rarefied_df)
 
     
@@ -121,15 +131,18 @@ class RarefactionFunction(Rarefaction):
         else:
             return concated_df
             
-        
 
-    def apply_transform(self, experiment):
+    def __dapply__(self, experiment):
         cutoff_df = experiment.filter(experiment.Sample.count >= self.n)
         rarefied_df = self.rarefy_and_apply_func(cutoff_df)
         
         if self.agg_rep != None:
             rarefied_df = rarefied_df.groupby(level='rarefaction').apply(self.agg_rep)
-            
+        
+        return rarefied_df
+      
+    def __eapply__(self, experiment):
+        rarefied_df = self.__dapply__(experiment)
         return experiment.with_data_df(rarefied_df)
     
 
@@ -141,8 +154,9 @@ class RarefactionCurveFunction(Transform):
         self.func = func
         self.axis = axis
         self.agg_rep = agg_rep
-        
-    def apply_transform(self, experiment):
+    
+    
+    def __dapply__(self, experiment):
         
         cutoff_exp = experiment.efilter(experiment.Sample.count >= self.n)
         
@@ -157,7 +171,13 @@ class RarefactionCurveFunction(Transform):
             del rarefied_exp
             del rarefied_df
                 
+        return concated_df
+    
+    
+    def __eapply__(self, experiment):
+        concated_df = self.__dapply__(experiment)
         return experiment.with_data_df(concated_df)
+    
     
     
 class RarefactionCurve(Transform):
@@ -167,7 +187,8 @@ class RarefactionCurve(Transform):
         self.step = step
         self.transform_to_apply = transform_to_apply
     
-    def apply_transform(self, experiment):
+    
+    def __dapply__(self, experiment):
         transformed_rarefied_dataframes = []
         
         for cutoff_level in np.arange(0, self.n, self.step):
@@ -179,7 +200,13 @@ class RarefactionCurve(Transform):
         
         rarefaction_curve_df = pd.concat(transformed_rarefied_dataframes, axis=0)
         
+        return rarefaction_curve_df
+        
+        
+    def __eapply__(self, experiment):
+        rarefaction_curve_df = self.__dapply__(experiment)
         return experiment.with_data_df(rarefaction_curve_df)
+    
     
     
 class Cluster(Transform):
@@ -201,7 +228,7 @@ class Cluster(Transform):
         clusters_df = load_swarm_otus_file(swarm_otus_filepath)
         return cls(clusters_df)
         
-    def apply_transform(self, experiment):
+    def __eapply__(self, experiment):
         read_cluster_df = self.clusters_df
         
         cluster_index = read_cluster_df.reindex(experiment.data_df.index)['cluster']
@@ -224,13 +251,17 @@ class DistanceMatrix(Transform):
     def __init__(self, distance_metric):
         self.distance_metric = distance_metric
         
-    def apply_transform(self, experiment):
+    def __dapply__(self, experiment):
         df = experiment.data_df.transpose()
         dm = cdist(df, df, self.distance_metric)
         distance_matrix_df = pd.DataFrame(dm, index=df.index, columns=df.index)
+        return distance_matrix_df
+    
+    def __eapply__(self, experiment):
+        distance_matrix_df = self.__dapply__(experiment)
         return experiment.with_data_df(distance_matrix_df)
     
-
+    
 class ClusterIntoOTUs(Transform):
     def __init__(self, otu_assignment_file, tax_assignment_file):
         self.otu_assignment_file = otu_assignment_file
@@ -266,7 +297,7 @@ class ClusterIntoOTUs(Transform):
         return df
     
     
-    def apply_transform(self, experiment):
+    def __eapply__(self, experiment):
         read_otu_df = self.__process_assignment_file()
         new_data_df = experiment.data_df.join(read_otu_df).groupby("otu").sum().reset_index().set_index("otu")
         

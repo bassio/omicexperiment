@@ -6,7 +6,7 @@ from omicexperiment.plotting.plot_pygal import plot_table, return_plot, return_p
 from omicexperiment.plotting.groups import group_plot_tree
 from omicexperiment.rarefaction import rarefy_dataframe
 from omicexperiment.dataframe import load_dataframe
-from omicexperiment.transforms.transform import Transform
+from omicexperiment.transforms.transform import Transform, Filter
 
 class Experiment(object):
     def __init__(self, data_df, metadata={}):
@@ -30,7 +30,7 @@ class OmicExperiment(Experiment):
         or \
         (isinstance(transforms, type) and issubclass(transforms, Transform)):
             transform = transforms #only a single object passed (not a list)
-            return transform.apply_transform(self)
+            return transform.__eapply__(self)
         
         elif isinstance(transforms, (types.FunctionType, types.BuiltinFunctionType, functools.partial)):
             func = transforms #only a single object passed (not a list)
@@ -44,27 +44,19 @@ class OmicExperiment(Experiment):
         elif isinstance(transforms, list):
             transformed_exp = self
             for transform in transforms:
-                transformed_exp = transform.apply_transform(transformed_exp)
+                transformed_exp = transform.__eapply__(transformed_exp)
             return transformed_exp
         
+        elif isinstance(transforms, Filter):
+	    return filter_expr.__eapply__(self)
+	    
         else:
             raise NotImplementedError
-
         
-    def filter(self, filter_expr):
-        if isinstance(filter_expr, filters.FilterExpression):
-            return filter_expr.return_value(self)
-        elif isinstance(filter_expr, Series):
-            criteria = series = filter_expr
-            if series.index.name == self.mapping_df.index.name:
-                columns_to_include = series.index[criteria]
-                new_counts = self.data_df.reindex(columns=columns_to_include)
-                return new_counts
-                
-    def efilter(self, filter_expr):
-        new_counts = self.filter(filter_expr) 
-        return self.__class__(new_counts, self.mapping_df)
-            
+        
+    def dapply(self, transforms, axis=0):
+        raise NotImplementedError
+    
             
     @property
     def samples(self):

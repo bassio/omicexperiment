@@ -1,15 +1,20 @@
 import pandas as pd
-from omicexperiment.filters.filters import FilterExpression, AttributeFilter, GroupByFilter, AttributeFlexibleOperatorMixin
+from omicexperiment.transforms.transform import Filter, AttributeFilter, GroupByTransform, AttributeFlexibleOperatorMixin
 
 
 class TaxonomyAttributeFilter(AttributeFilter, AttributeFlexibleOperatorMixin):
-    def return_value(self, experiment):
+    def __dapply__(self, experiment):
         _op = self._op_function(experiment._counts_with_tax())
         criteria = _op(self.value)
         return experiment.data_df[criteria]
+    
+    def __eapply__(self, experiment):
+        filtered_df = self.__dapply__(experiment)
+        return experiment.with_data_df(filtered_df)
+        
         
 
-class TaxonomyGroupBy(GroupByFilter):
+class TaxonomyGroupBy(GroupByTransform):
     TAX_RANKS = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
     
     collapse_after_groupby_rank = True
@@ -21,7 +26,7 @@ class TaxonomyGroupBy(GroupByFilter):
             rank = 'class_'
         return TAX_RANKS[:TAX_RANKS.index(rank)+1]
 
-    def return_value(self, experiment):
+    def __dapply__(self, experiment):
         if self.operator == 'groupby':
             df = experiment.data_df
             rank = self.value
@@ -51,9 +56,15 @@ class TaxonomyGroupBy(GroupByFilter):
                 return df2
             else:
                 return df
-            
+	      
+	      
+    def __eapply__(self, experiment):
+        grouped_tax_df = self.__dapply__(experiment)
+        return experiment.with_data_df(grouped_tax_df)
+        
+        
     
-class TaxonomyGroupByNoCollapse(GroupByFilter):
+class TaxonomyGroupByNoCollapse(GroupByTransform):
     collapse_after_groupby_rank = False
 
 
