@@ -1,25 +1,20 @@
 import types
 import functools
-<<<<<<< HEAD
-=======
 from collections import OrderedDict
->>>>>>> 0d1b27e06abfcfcec83d67ebc5842b2954537620
 from pandas import Series, DataFrame
 from omicexperiment import filters
 from omicexperiment.plotting.plot_pygal import plot_table, return_plot, return_plot_tree, plot_to_file
 from omicexperiment.plotting.groups import group_plot_tree
 from omicexperiment.rarefaction import rarefy_dataframe
 from omicexperiment.dataframe import load_dataframe
-<<<<<<< HEAD
 from omicexperiment.transforms.transform import Transform, Filter
-=======
-from omicexperiment.transforms.transform import Transform
->>>>>>> 0d1b27e06abfcfcec83d67ebc5842b2954537620
+
 
 class Experiment(object):
     def __init__(self, data_df, metadata={}):
         self.data_df = load_dataframe(data_df)
         self.metadata = metadata
+
 
 class OmicExperiment(Experiment):
     def __init__(self, data_df, mapping_df = None, metadata={}):
@@ -38,11 +33,7 @@ class OmicExperiment(Experiment):
         or \
         (isinstance(transforms, type) and issubclass(transforms, Transform)):
             transform = transforms #only a single object passed (not a list)
-<<<<<<< HEAD
             return transform.__eapply__(self)
-=======
-            return transform.apply_transform(self)
->>>>>>> 0d1b27e06abfcfcec83d67ebc5842b2954537620
         
         elif isinstance(transforms, (types.FunctionType, types.BuiltinFunctionType, functools.partial)):
             func = transforms #only a single object passed (not a list)
@@ -56,44 +47,17 @@ class OmicExperiment(Experiment):
         elif isinstance(transforms, list):
             transformed_exp = self
             for transform in transforms:
-<<<<<<< HEAD
                 transformed_exp = transform.__eapply__(transformed_exp)
             return transformed_exp
         
-        elif isinstance(transforms, Filter):
-	    return filter_expr.__eapply__(self)
-	    
         else:
             raise NotImplementedError
         
         
     def dapply(self, transforms, axis=0):
         raise NotImplementedError
-    
-=======
-                transformed_exp = transform.apply_transform(transformed_exp)
-            return transformed_exp
         
-        else:
-            raise NotImplementedError
-
         
-    def filter(self, filter_expr):
-        if isinstance(filter_expr, filters.FilterExpression):
-            return filter_expr.return_value(self)
-        elif isinstance(filter_expr, Series):
-            criteria = series = filter_expr
-            if series.index.name == self.mapping_df.index.name:
-                columns_to_include = series.index[criteria]
-                new_counts = self.data_df.reindex(columns=columns_to_include)
-                return new_counts
-                
-    def efilter(self, filter_expr):
-        new_counts = self.filter(filter_expr) 
-        return self.__class__(new_counts, self.mapping_df)
-            
->>>>>>> 0d1b27e06abfcfcec83d67ebc5842b2954537620
-            
     @property
     def samples(self):
         return list(self.data_df.columns)
@@ -208,9 +172,6 @@ class OmicExperiment(Experiment):
             return d
         else:
             return desc.format(**d)
-<<<<<<< HEAD
-        
-=======
     
     def compare(self, other_exp):
         self_desc = self.describe(as_dict=True)
@@ -222,4 +183,3 @@ class OmicExperiment(Experiment):
         
         return DataFrame(df_dict)
     
->>>>>>> 0d1b27e06abfcfcec83d67ebc5842b2954537620
