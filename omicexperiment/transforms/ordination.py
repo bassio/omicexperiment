@@ -6,7 +6,7 @@ from omicexperiment.util import hybridmethod
 
 class PCoA(Transform):
     @hybridmethod
-    def apply_transform(self, experiment):
+    def __eapply__(self, experiment):
         dm = experiment.data_df
         pcoa_results = pcoa(dm)
         pcoa_df = pcoa_results.samples

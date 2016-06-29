@@ -31,6 +31,7 @@ with open('omicexperiment/__init__.py', 'rb') as f:
 
 
 here = os.path.abspath(os.path.dirname(__file__))
+
 README = open(os.path.join(here, 'README.md')).read()
 CHANGES = open(os.path.join(here, 'CHANGES.md')).read()
 
@@ -81,4 +82,3 @@ setup(name=package_name,
       entry_points="""\
       """,
       )
-
