@@ -33,4 +33,24 @@ class BetaDiversity(Transform):
         distance_matrix_df = pd.DataFrame(dm, index=df.index, columns=df.index)
         return experiment.with_data_df(distance_matrix_df)
     
+
+def filter_distance_matrix(experiment, grouping_col, group_1, group_2):
+    grouping_series = experiment.mapping_df[grouping_col]
     
+    group_1_samples = experiment.mapping_df[grouping_series==group_1].index
+    group_2_samples = experiment.mapping_df[grouping_series==group_2].index
+    
+    dm = experiment.data_df.reindex(index=group_1_samples, columns=group_2_samples)
+    
+    return dm
+
+
+def distances(experiment, grouping_col, group_1, group_2):
+    dm = filter_distance_matrix(experiment, grouping_col, group_1, group_2)
+    try:
+        return squareform(dm)
+    except ValueError: #assymetric DM
+        if group_1 != group_2:
+            return dm.as_matrix().flatten()
+        else:
+            raise

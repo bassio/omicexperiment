@@ -7,3 +7,14 @@ include requirements.txt
 include setup.cfg
 include doc/*.ipynb doc/*.md doc/*.txt doc/*.tsv doc/*.biom
 recursive-include tests/data *
+
+graft doc
+
+global-exclude __pycache__/*
+global-exclude *.so
+global-exclude *.pyd
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .git*
+global-exclude .directory
+global-exclude .DS_Store

@@ -142,8 +142,8 @@ class GreenGenesProcessedTaxonomy(object):
 
     @staticmethod
     def is_unidentified(taxon):
-        taxon_no_prefix = GreenGenesProcessedTaxonomy.remove_prefix(taxon)
-        return taxon_no_prefix in ('', 'unidentified', 'No blast hit', 'Unassigned')
+        taxon_no_prefix = GreenGenesProcessedTaxonomy.remove_prefix(taxon).lower()
+        return taxon_no_prefix in ('', 'unidentified', 'no blast hit', 'unassigned')
 
 
 def tax_as_tuples(tax_assignments_file):
