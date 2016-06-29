@@ -15,7 +15,7 @@ class TaxonomyAttributeFilter(AttributeFilter, AttributeFlexibleOperatorMixin):
         
 
 class Taxonomy(object):
-    groupby = TaxonomyGroupBy()
+    groupby = TaxonomyGroupBy
     kingdom = TaxonomyAttributeFilter(attribute='kingdom')
     phylum = TaxonomyAttributeFilter(attribute='phylum')
     class_ = TaxonomyAttributeFilter(attribute='class')

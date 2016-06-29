@@ -216,14 +216,6 @@ def load_dataframe(input_file_or_obj, first_col_in_file_as_index=True):
             df = load_biom_as_dataframe(str(fp))
             return df
         elif fp.suffix == '.csv':
-<<<<<<< HEAD
-            index_col = 0 if first_col_in_file_as_index else None
-            df = pd.read_csv(str(fp), index_col=index_col)
-            return df
-        elif fp.suffix == '.tsv':
-            index_col = 0 if first_col_in_file_as_index else None
-            df = pd.read_csv(str(fp), sep='\t', index_col=index_col)
-=======
             df = pd.read_csv(str(fp))
             if first_col_in_file_as_index:
                 df.set_index(df.columns[0], drop=False, inplace=True)
@@ -232,7 +224,6 @@ def load_dataframe(input_file_or_obj, first_col_in_file_as_index=True):
             df = pd.read_csv(str(fp), sep='\t')
             if first_col_in_file_as_index:
                 df.set_index(df.columns[0], drop=False, inplace=True)
->>>>>>> 0d1b27e06abfcfcec83d67ebc5842b2954537620
             return df
         
     elif isinstance(input_file_or_obj, pd.DataFrame):

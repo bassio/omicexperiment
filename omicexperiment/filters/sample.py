@@ -1,6 +1,6 @@
 import pandas as pd
-<<<<<<< HEAD
 from omicexperiment.transforms.transform import Filter, AttributeFilter, GroupByTransform, FlexibleOperatorMixin, AttributeFlexibleOperatorMixin
+from omicexperiment.transforms.sample import SampleGroupBy
 
 
 class SampleMinCount(Filter):
@@ -35,35 +35,6 @@ class SampleAttributeFilter(AttributeFilter, AttributeFlexibleOperatorMixin):
         return experiment.data_df.reindex(columns=criteria.index[criteria])
         
 
-class SampleGroupBy(GroupByTransform):
-    def __dapply__(self, experiment):
-        if self.operator == 'groupby':
-            if self.value is not None:
-                mapping_df = experiment.mapping_df.copy()
-                transposed = experiment.to_relative_abundance().data_df.transpose()
-                joined_df = transposed.join(mapping_df[[self.value]])
-                means_df = joined_df.groupby(self.value).mean()
-                retransposed = means_df.transpose()
-            else:
-                retransposed = experiment.data_df.copy()
-            
-            return retransposed
-            
-
-class SampleGroupBySum(GroupByTransform):
-    def __dapply__(self, experiment):
-        if self.operator == 'groupby':
-            if self.value is not None:
-                mapping_df = experiment.mapping_df.copy()
-                transposed = experiment.data_df.transpose()
-                joined_df = transposed.join(mapping_df[[self.value]])
-                means_df = joined_df.groupby(self.value).sum()
-                retransposed = means_df.transpose()
-                return retransposed
-            else:
-                return experiment.data_df.copy()
-
-
 class SampleSumCounts(Filter):
     def __dapply__(self, experiment):
         return experiment.data_df.sum()
@@ -79,8 +50,7 @@ class Sample(object):
     att = SampleAttributeFilter()
     c = SampleAttributeFilter()
     
-    groupby = SampleGroupBy()
-    groupby_sum = SampleGroupBySum()
+    groupby = SampleGroupBy
     
     sum_counts = SampleSumCounts()
     

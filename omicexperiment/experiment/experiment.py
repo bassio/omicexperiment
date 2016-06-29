@@ -55,7 +55,13 @@ class OmicExperiment(Experiment):
         
         
     def dapply(self, transforms, axis=0):
-        raise NotImplementedError
+        if isinstance(transforms, Transform) \
+        or \
+        (isinstance(transforms, type) and issubclass(transforms, Transform)):
+            transform = transforms #only a single object passed (not a list)
+            return transform.__dapply__(self)
+        else:
+            raise NotImplementedError
         
         
     @property

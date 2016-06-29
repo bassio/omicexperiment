@@ -8,11 +8,16 @@ from omicexperiment.util import hybridmethod
 
 
 class RelativeAbundance(Transform):
-    @staticmethod
-    def apply_transform(experiment):
+    @classmethod
+    def __dapply__(cls, experiment):
         rel_counts = experiment.data_df.apply(lambda c: c / c.sum() * 100, axis=0)
-        return experiment.with_data_df(rel_counts)
+        return rel_counts
     
+    @classmethod
+    def __eapply__(cls, experiment):
+        rel_counts = cls.__dapply__(experiment)
+        return experiment.with_data_df(rel_counts)
+
 
 def number_unique_obs(series):
     return (series > 0).sum()
@@ -34,7 +39,7 @@ class NumberUniqueObs(Transform):
     
     @classmethod
     def __eapply__(cls, experiment):
-        transposed_transformed_df = self.__dapply__(experiment)
+        transposed_transformed_df = cls.__dapply__(experiment)
         return experiment.with_data_df(transposed_transformed_df)
 
 
@@ -85,7 +90,7 @@ class Rarefaction(Transform):
     def __dapply__(self, experiment):
         n = self.n
         num_reps = self.num_reps
-        cutoff_df = experiment.filter(experiment.Sample.count >= n)
+        cutoff_df = experiment.dapply(experiment.Sample.count >= n)
         rarefied_df = self._rarefy_dataframe(cutoff_df, n, num_reps)
         return rarefied_df
     
@@ -133,7 +138,7 @@ class RarefactionFunction(Rarefaction):
 
 
     def __dapply__(self, experiment):
-        cutoff_df = experiment.filter(experiment.Sample.count >= self.n)
+        cutoff_df = experiment.dapply(experiment.Sample.count >= self.n)
         rarefied_df = self.rarefy_and_apply_func(cutoff_df)
         
         if self.agg_rep != None:
@@ -157,14 +162,14 @@ class RarefactionCurveFunction(Transform):
     
     
     def __dapply__(self, experiment):        
-        cutoff_exp = experiment.efilter(experiment.Sample.count >= self.n)
+        cutoff_exp = experiment.apply(experiment.Sample.count >= self.n)
         
         
         concated_df = None
         
         for level in np.arange(0, self.n, self.step):
             RF = RarefactionFunction(n=level, num_reps=self.num_reps, func=self.func, axis=self.axis, agg_rep=self.agg_rep)
-            rarefied_exp = RF.apply_transform(cutoff_exp)
+            rarefied_exp = cutoff_exp.apply(RF)
             rarefied_df = rarefied_exp.data_df
             concated_df = pd.concat([concated_df, rarefied_df], levels=['rarefaction', 'rep'])
             del rarefied_exp
@@ -332,7 +337,7 @@ class BinObservations(Transform):
         return without_binned_obs_df
         
 
-    def __eapply__(self, experiment)
+    def __eapply__(self, experiment):
         without_binned_obs_df = self.__dapply__(experiment)
         return experiment.with_data_df(without_binned_obs_df)
         
