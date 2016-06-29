@@ -40,8 +40,13 @@ class Filter(Transform):
     def __eapply__(self, experiment):
         filtered_df = self.__class__.__dapply__(self, experiment)
         return experiment.with_data_df(filtered_df)
-        
-        
+    
+    def __repr__(self):
+        base_repr = object.__repr__(self)[1:-1]
+        full_repr = "<{} - operator:{}; value:{};>".format(base_repr, str(self.operator), str(self.value))
+        return full_repr
+    
+    
 class AttributeFilter(Filter):
     def __init__(self, operator=None, value=None, attribute=None):
         Filter.__init__(self, operator, value)
@@ -73,7 +78,12 @@ class AttributeFilter(Filter):
 
     def __getitem__(self, item):
         return self.__class__(operator = self.operator, value=self.value, attribute=item)
-
+    
+    def __repr__(self):
+        base_repr = object.__repr__(self)[1:-1]
+        full_repr = "<{} - attribute:{}; operator:{}; value:{};>".format(base_repr, str(self.attribute), str(self.operator), str(self.value))
+        return full_repr
+    
 
 class GroupByTransform(Transform):
     def __init__(self, value=None):

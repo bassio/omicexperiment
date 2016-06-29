@@ -2,7 +2,7 @@ import types
 import functools
 from collections import OrderedDict
 from pandas import Series, DataFrame
-from omicexperiment import filters
+from omicexperiment.transforms import filters
 from omicexperiment.plotting.plot_pygal import plot_table, return_plot, return_plot_tree, plot_to_file
 from omicexperiment.plotting.groups import group_plot_tree
 from omicexperiment.rarefaction import rarefy_dataframe
