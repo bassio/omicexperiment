@@ -55,16 +55,6 @@ class MicrobiomeExperiment(OmicExperiment):
         return joined_df
 
 
-    def efilter(self, filter_expr):
-        new_exp = OmicExperiment.apply(self, filter_expr)
-        new_exp.__init_taxonomy(self.taxonomy_assignment_file)
-        return new_exp
-
-    def to_relative_abundance(self):
-        rel_counts = self.data_df.apply(lambda c: c / c.sum() * 100, axis=0)
-        return self.__class__(rel_counts, self.mapping_df, self.taxonomy_assignment_file)
-
-
     def __getitem__(self, value):
         return self.apply(value)
 

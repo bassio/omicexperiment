@@ -1,6 +1,7 @@
 import types
 import functools
 from collections import OrderedDict
+import numpy as np
 from pandas import Series, DataFrame
 from omicexperiment.transforms import filters
 from omicexperiment.plotting.plot_pygal import plot_table, return_plot, return_plot_tree, plot_to_file
@@ -104,19 +105,13 @@ class OmicExperiment(Experiment):
 
         return tree
 
-    def groupby(self, variable):
-        mapping_df = self.mapping_df.copy()
-        transposed = self.data_df.transpose()
-        joined_df = transposed.join(mapping_df[[variable]])
-        means_df = joined_df.groupby(variable).mean()
-        retransposed = means_df.transpose()
-        return retransposed
+    def groupby(self, variable, aggfunc=np.mean):
+        from omicexperiment.transforms.sample import SampleGroupBy
+        return self.apply(SampleGroupBy(variable, aggfunc))
 
     def to_relative_abundance(self):
         from omicexperiment.transforms.general import RelativeAbundance
-        return RelativeAbundance.apply_transform(self)
-        #rel_counts = self.data_df.apply(lambda c: c / c.sum() * 100, axis=0)
-        #return self.__class__(rel_counts, self.mapping_df)
+        self.apply(RelativeAbundance)
 
     def __getitem__(self, value):
         return self.apply(value)
