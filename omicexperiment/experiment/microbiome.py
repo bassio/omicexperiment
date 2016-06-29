@@ -56,7 +56,7 @@ class MicrobiomeExperiment(OmicExperiment):
 
 
     def efilter(self, filter_expr):
-        new_exp = OmicExperiment.efilter(self, filter_expr)
+        new_exp = OmicExperiment.apply(self, filter_expr)
         new_exp.__init_taxonomy(self.taxonomy_assignment_file)
         return new_exp
 
@@ -66,7 +66,7 @@ class MicrobiomeExperiment(OmicExperiment):
 
 
     def __getitem__(self, value):
-        return self.efilter(value)
+        return self.apply(value)
 
 
     def rarefy(self, n, num_reps=1):
