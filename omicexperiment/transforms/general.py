@@ -321,13 +321,13 @@ class BinObservations(Transform):
         self.bin_groupname = bin_groupname
     
     def __dapply__(self, experiment):
-        new_df = experiment.data_df.copy()
-
-        #add sum of the other
-        new_df.loc[self.bin_groupname] = new_df.loc[self.observations_to_bin].sum()
+        observations_to_keep = experiment.data_df.index.difference(self.observations_to_bin)
 
         #remove other
-        without_binned_obs_df = new_df.loc[~new_df.index.isin(self.observations_to_bin)]
+        without_binned_obs_df = experiment.data_df.reindex(observations_to_keep)
+        
+        #add sum of the other
+        without_binned_obs_df.loc[self.bin_groupname] = experiment.data_df.loc[self.observations_to_bin].sum()
         
         return without_binned_obs_df
         
