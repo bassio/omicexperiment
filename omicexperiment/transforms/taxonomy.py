@@ -1,4 +1,5 @@
 from omicexperiment.transforms.transform import GroupByTransform
+from omicexperiment.taxonomy import tax_as_dataframe
 
 
 class TaxonomyGroupBy(GroupByTransform):
@@ -43,3 +44,16 @@ class TaxonomyGroupBy(GroupByTransform):
         groupby_df = self.__dapply__(experiment)
         return experiment.with_data_df(groupby_df)
     
+
+class AssignTaxonomy(Transform):
+    def __init__(self, taxonomy_df):
+        self.taxonomy_df = taxonomy_df
+        
+    @classmethod
+    def from_qiime_tax_assignment_file(cls, tax_assignment_file):
+        taxonomy_df = tax_as_dataframe(tax_assignment_file)
+        return cls(taxonomy_df)
+        
+    def __eapply__(self, experiment):
+        return experiment.with_taxonomy_df(self.taxonomy_df)
+        
