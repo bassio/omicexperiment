@@ -4,6 +4,7 @@ import hashlib
 from pathlib import Path
 from biom import parse_table
 from biom import Table as BiomTable
+from omicexperiment.util import parse_fasta, parse_fastq
 from omicexperiment.taxonomy import tax_as_dataframe
 
 def load_biom(biom_filepath):
@@ -39,8 +40,6 @@ def load_biom_as_dataframe(biom_filepath):
 
 
 def load_fasta(fasta_filepath, calculate_sha1=False):
-    import hashlib
-    from omicexperiment.util import parse_fasta
 
     descs = []
     seqs = []
@@ -48,7 +47,7 @@ def load_fasta(fasta_filepath, calculate_sha1=False):
         descs.append(desc)
         seqs.append(seq)
 
-    fasta_df = pd.DataFrame({'description': descs, 'sequence': seqs})
+    fasta_df = pd.DataFrame({'description': descs, 'sequence': seqs}, columns=['description', 'sequence'])
 
     del descs
     del seqs
@@ -58,6 +57,31 @@ def load_fasta(fasta_filepath, calculate_sha1=False):
         fasta_df['sha1'] = fasta_df['sequence'].apply(lambda x: hashlib.sha1(x.encode('utf-8')).hexdigest())
 
     return fasta_df
+
+
+def load_fastq(fastq_filepath, calculate_sha1=False):
+
+    descs = []
+    seqs = []
+    quals = []
+    
+    for desc, seq, qual in parse_fastq(fastq_filepath):
+        descs.append(desc)
+        seqs.append(seq)
+        quals.append(qual)
+
+    fastq_df = pd.DataFrame({'description': descs, 'sequence': seqs, 'qual': quals}, columns=['description', 'sequence', 'qual'])
+
+    del descs
+    del seqs
+    del quals
+    
+    #fasta_df.drop('description', axis=1, inplace=True)
+    if calculate_sha1:
+        fastq_df['sha1'] = fastq_df['sequence'].apply(lambda x: hashlib.sha1(x.encode('utf-8')).hexdigest())
+
+    return fastq_df
+
 
 def load_fasta_counts(fasta_filepath, sample_name=None):
     fasta_df = load_fasta(fasta_filepath, calculate_sha1=True)

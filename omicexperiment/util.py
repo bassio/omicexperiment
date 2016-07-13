@@ -30,6 +30,21 @@ def parse_fasta_relabel(fasta_filepath, relabel_fn=lambda x:x):
     for desc, seq in parse_fasta(fasta_filepath):
         yield relabel_fn(desc), seq
 
+
+def parse_fastq(fastq_filepath):
+    with open(fastq_filepath) as f:
+        seq = ""
+        desc = ""
+        qual = ""
+        
+        for l in f:
+            if l.startswith("@"):
+                desc = l.strip()
+                seq = f.readline().strip()
+                plus = f.readline()
+                qual = f.readline().strip()
+                yield desc, seq, qual
+                
         
 def counts_df_to_repset_fasta(fasta_counts_df, output_fasta, sizes_out=False):
     sums_df = fasta_counts_df.sum(axis=1).sort_values(ascending=False)
