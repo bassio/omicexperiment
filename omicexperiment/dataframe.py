@@ -195,6 +195,21 @@ def load_qiime_otu_assignment_file(otu_assignment_filepath):
     return df
 
 
+def load_qiime_otu_map_file(otu_map_file):
+    obs_cluster_tuples = []
+
+    with open(otu_map_file) as f:
+        for l in f.readlines():
+            reads = l.split("\t")
+            seed = reads[0]
+            rest = reads[1:]
+
+            for obs in rest:
+                obs_cluster_tuples.append((obs, seed))
+
+    return pd.DataFrame.from_records(obs_cluster_tuples, columns=['observation', 'cluster'])
+
+    
 def load_taxonomy_dataframe(tax_file_or_tax_df):
     if isinstance(tax_file_or_tax_df, pd.DataFrame):
         return tax_file_or_tax_df
@@ -215,12 +230,12 @@ def load_dataframe(input_file_or_obj, first_col_in_file_as_index=True):
         elif fp.suffix == '.csv':
             df = pd.read_csv(str(fp))
             if first_col_in_file_as_index:
-                df.set_index(df.columns[0], drop=False, inplace=True)
+                df.set_index(df.columns[0], drop=True, inplace=True)
             return df
         elif fp.suffix == '.tsv':
             df = pd.read_csv(str(fp), sep='\t')
             if first_col_in_file_as_index:
-                df.set_index(df.columns[0], drop=False, inplace=True)
+                df.set_index(df.columns[0], drop=True, inplace=True)
             return df
 
     elif isinstance(input_file_or_obj, pd.DataFrame):

@@ -1,5 +1,7 @@
- 
-                
+import hashlib
+import pandas as pd
+
+
 def parse_fasta(fasta_filepath):
     
     def _parse_fasta(fasta):
@@ -22,6 +24,12 @@ def parse_fasta(fasta_filepath):
     next(iter_fasta)
     for desc, seq in iter_fasta:
         yield desc, seq
+
+
+def parse_fasta_relabel(fasta_filepath, relabel_fn=lambda x:x):
+    for desc, seq in parse_fasta(fasta_filepath):
+        yield relabel_fn(desc), seq
+
         
 def counts_df_to_repset_fasta(fasta_counts_df, output_fasta, sizes_out=False):
     sums_df = fasta_counts_df.sum(axis=1).sort_values(ascending=False)
@@ -36,7 +44,21 @@ def counts_df_to_repset_fasta(fasta_counts_df, output_fasta, sizes_out=False):
                 f.write(seq + "\n")
                 
 
+def sha1_to_sequences(sequence_array):
+    seq_series = pd.Series(sequence_array)
+    seq_df = pd.DataFrame({'sequence':seq_series})
+    seq_df['sha1'] = seq_df['sequence'].apply(lambda x: hashlib.sha1(x.encode('utf-8')).hexdigest())
+    seq_df.set_index('sha1', inplace=True)
+    return seq_df
 
+
+def dataframe_to_fasta(sequence_df, filename):
+    with open(filename, 'w') as f:
+        for row in sequence_df[['sequence']].iterrows():
+            print('>' + row[0], file=f) #identifier in index
+            print(row[1][0], file=f) #sequence itself
+    
+    
 #adapted from sqlalchemy's hybrid extension module:
 # Copyright (C) 2005-2016 the SQLAlchemy authors and contributors
 # <see AUTHORS file>

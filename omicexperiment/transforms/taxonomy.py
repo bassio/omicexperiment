@@ -1,4 +1,4 @@
-from omicexperiment.transforms.transform import GroupByTransform
+from omicexperiment.transforms.transform import Transform, GroupByTransform
 from omicexperiment.taxonomy import tax_as_dataframe
 
 
@@ -43,17 +43,30 @@ class TaxonomyGroupBy(GroupByTransform):
     def __eapply__(self, experiment):
         groupby_df = self.__dapply__(experiment)
         return experiment.with_data_df(groupby_df)
-    
+
 
 class AssignTaxonomy(Transform):
     def __init__(self, taxonomy_df):
         self.taxonomy_df = taxonomy_df
-        
+
     @classmethod
     def from_qiime_tax_assignment_file(cls, tax_assignment_file):
         taxonomy_df = tax_as_dataframe(tax_assignment_file)
         return cls(taxonomy_df)
-        
+
     def __eapply__(self, experiment):
         return experiment.with_taxonomy_df(self.taxonomy_df)
+
+
+class RemoveUnassigned(Transform):
+    @classmethod
+    def __dapply__(cls, experiment):
+        unassigned_filter = experiment.data_df.index.str.lower().str.contains('unassigned')
+        to_remove = experiment.data_df[unassigned_filter].index
+        return experiment.data_df.drop(to_remove)
+
+    @classmethod
+    def __eapply__(cls, experiment):
+        with_unassigned_removed_df = cls.__dapply__(experiment)
+        return experiment.with_data_df(with_unassigned_removed_df)
         
