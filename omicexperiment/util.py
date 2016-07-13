@@ -39,12 +39,13 @@ def parse_fastq(fastq_filepath):
         
         for l in f:
             if l.startswith("@"):
-                desc = l.strip()
+                desc = l[1:].strip()
                 seq = f.readline().strip()
                 plus = f.readline()
                 qual = f.readline().strip()
                 yield desc, seq, qual
-                
+            else:
+                raise
         
 def counts_df_to_repset_fasta(fasta_counts_df, output_fasta, sizes_out=False):
     sums_df = fasta_counts_df.sum(axis=1).sort_values(ascending=False)

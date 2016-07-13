@@ -52,7 +52,6 @@ def load_fasta(fasta_filepath, calculate_sha1=False):
     del descs
     del seqs
 
-    #fasta_df.drop('description', axis=1, inplace=True)
     if calculate_sha1:
         fasta_df['sha1'] = fasta_df['sequence'].apply(lambda x: hashlib.sha1(x.encode('utf-8')).hexdigest())
 
@@ -76,7 +75,6 @@ def load_fastq(fastq_filepath, calculate_sha1=False):
     del seqs
     del quals
     
-    #fasta_df.drop('description', axis=1, inplace=True)
     if calculate_sha1:
         fastq_df['sha1'] = fastq_df['sequence'].apply(lambda x: hashlib.sha1(x.encode('utf-8')).hexdigest())
 
