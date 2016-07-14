@@ -139,7 +139,7 @@ def fasta_df_to_counts_table(fasta_df, desc_to_sampleid_func, index='sha1'):
 
     if index == 'sha1' \
     and 'sha1' not in fasta_df.columns:
-        fasta_df['sha1'] = fasta_df['sequence'].apply(lambda x: hashlib.sha1(x).hexdigest())
+        fasta_df['sha1'] = fasta_df['sequence'].apply(lambda x: hashlib.sha1(x.encode('utf-8')).hexdigest())
 
     pivoted = fasta_df.pivot_table(index=index, columns='sample', aggfunc='count', fill_value=0)
 

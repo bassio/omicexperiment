@@ -111,7 +111,7 @@ class OmicExperiment(Experiment):
 
     def to_relative_abundance(self):
         from omicexperiment.transforms.general import RelativeAbundance
-        self.apply(RelativeAbundance)
+        return self.apply(RelativeAbundance)
 
     def __getitem__(self, value):
         return self.apply(value)
