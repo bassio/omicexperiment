@@ -19,6 +19,8 @@ def parse_fasta(fasta_filepath):
                 else:
                     seq = seq + l
                     continue
+            
+            yield desc, seq
 
     iter_fasta = iter(_parse_fasta(fasta_filepath))
     next(iter_fasta)
