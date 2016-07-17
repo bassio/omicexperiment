@@ -36,23 +36,16 @@ class ClusterObservations(Transform):
     def clusters_df_dict(self):
         return self.clusters_df.to_dict()['cluster']
     
-    '''
     def __dapply__(self, experiment):
-        cluster_index = self.clusters_df.reindex(experiment.data_df.index)['cluster']
-
-        #append clusters of reads as an extra level to the index
-        new_data_df = experiment.data_df.set_index(cluster_index, append=True)
-        new_data_df = new_data_df.groupby(level='cluster').apply(self.aggfunc)
-
-        return new_data_df
-    '''
-    
-    def __dapply__(self, experiment):
-        #append clusters of reads as an extra level to the index
+        #rename the observations according to their clusters
         new_data_df = experiment.data_df.rename(index=self.clusters_df_dict())
+        
+        #apply the aggregation
         new_data_df.index.rename('cluster', inplace=True)
         new_data_df_agg = new_data_df.groupby(level='cluster').agg(self.aggfunc)
+        
         del new_data_df
+        
         return new_data_df_agg
 
     def __eapply__(self, experiment):
