@@ -82,7 +82,7 @@ class MicrobiomeExperiment(OmicExperiment):
     def with_taxonomy_df(taxonomy_df):
         pass
 
-    def to_tsv(filepath_or_buf, dataframe='data_df'):
+    def to_tsv(self, filepath_or_buf, dataframe='data_df'):
         df = getattr(self, dataframe)
         if dataframe == 'data_df':
             df.to_csv(filepath_or_buf, sep="\t", index_label=True, encoding='utf-8')
