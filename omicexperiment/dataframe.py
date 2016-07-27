@@ -222,7 +222,7 @@ def load_qiime_otu_map_file(otu_map_file):
 
     with open(otu_map_file) as f:
         for l in f.readlines():
-            reads = l.split("\t")
+            reads = [r.strip() for r in l.split("\t")]
             seed = reads[0]
             rest = reads[1:]
 
