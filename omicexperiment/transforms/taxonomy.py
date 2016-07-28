@@ -12,8 +12,8 @@ class TaxonomyGroupBy(GroupByTransform):
     @staticmethod
     def tax_rank_levels(highest_res_rank):
         TAX_RANKS = TaxonomyGroupBy.TAX_RANKS
-        if highest_res_rank == 'class':
-            highest_res_rank = 'class_'
+        if highest_res_rank == 'class_':
+            highest_res_rank = 'class'
         return TAX_RANKS[:TAX_RANKS.index(highest_res_rank)+1]
 
     def __dapply__(self, experiment):
@@ -69,4 +69,3 @@ class RemoveUnassigned(Transform):
     def __eapply__(cls, experiment):
         with_unassigned_removed_df = cls.__dapply__(experiment)
         return experiment.with_data_df(with_unassigned_removed_df)
-        

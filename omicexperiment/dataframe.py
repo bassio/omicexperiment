@@ -242,7 +242,7 @@ def load_taxonomy_dataframe(tax_file_or_tax_df):
         return tax_as_dataframe(str(tax_fp))
 
 def load_dataframe(input_file_or_obj, first_col_in_file_as_index=True):
-    if isinstance(input_file_or_obj, str):
+    if isinstance(input_file_or_obj, (str, Path)):
         #assume file path
         fp = Path(input_file_or_obj)
         assert(fp.exists())
@@ -250,14 +250,12 @@ def load_dataframe(input_file_or_obj, first_col_in_file_as_index=True):
             df = load_biom_as_dataframe(str(fp))
             return df
         elif fp.suffix == '.csv':
-            df = pd.read_csv(str(fp))
-            if first_col_in_file_as_index:
-                df.set_index(df.columns[0], drop=True, inplace=True)
+            index_col = 0 if first_col_in_file_as_index else None
+            df = pd.read_csv(str(fp), index_col=index_col)
             return df
         elif fp.suffix == '.tsv':
-            df = pd.read_csv(str(fp), sep='\t')
-            if first_col_in_file_as_index:
-                df.set_index(df.columns[0], drop=True, inplace=True)
+            index_col = 0 if first_col_in_file_as_index else None
+            df = pd.read_csv(str(fp), sep='\t', index_col=index_col)
             return df
 
     elif isinstance(input_file_or_obj, pd.DataFrame):

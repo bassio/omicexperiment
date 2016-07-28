@@ -1,56 +1,56 @@
 from collections import namedtuple
 import pandas as pd
 
-TAX_RANKS = ('kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species')
+TAX_RANKS = ('kingdom', 'phylum', 'class_', 'order', 'family', 'genus', 'species')
 TAX_PREFIXES = ('k__', 'p__', 'c__', 'o__', 'f__', 'g__', 's__')
 
-TaxonomyTuple = namedtuple('TaxonomyTuple', ['kingdom', 'phylum', 'class_', 'order', 'family', 'genus', 'species'])
+TaxonomyTuple = namedtuple('TaxonomyTuple', TAX_RANKS)
 
 
 def tax_rank(rank):
-  if rank == 'class':
-    rank = 'class_'
-  return TAX_RANKS[:TAX_RANKS.index(rank)+1]
+    if rank == 'class':
+        rank = 'class_'
+    return TAX_RANKS[:TAX_RANKS.index(rank)+1]
 
 
 def is_kingdom_unassigned(kingdom_assignment):
-  if kingdom_assignment == 'Unassigned':
-    return True
-  elif 'No blast hit' in kingdom_assignment:
-    return True
-  elif 'k__' not in kingdom_assignment:
-    return True
+    if kingdom_assignment == 'Unassigned':
+        return True
+    elif 'No blast hit' in kingdom_assignment:
+        return True
+    elif 'k__' not in kingdom_assignment:
+        return True
 
-  return False
+    return False
 
 
 def relative_abundance_by_sample(dataframe):
-  return dataframe.apply(lambda c: c / c.sum() * 100, axis=0)
+    return dataframe.apply(lambda c: c / c.sum() * 100, axis=0)
 
 
 def relative_abundance(dataframe, sort_values=True):
-  rel_abundances_taxa = relative_abundance_by_sample(dataframe).mean(axis=1)
-  if sort_values:
-    return rel_abundances_taxa.sort_values(ascending=False)
-  else:
-    return rel_abundances_taxa
+    rel_abundances_taxa = relative_abundance_by_sample(dataframe).mean(axis=1)
+    if sort_values:
+        return rel_abundances_taxa.sort_values(ascending=False)
+    else:
+        return rel_abundances_taxa
 
 
 def add_mapping_dataframe(counts_dataframe, mapping_dataframe):
-  mapping_df = mapping_dataframe.copy()
-  mapping_df.set_index('#SampleID', drop=False, inplace=True)
-  transposed = dataframe.transpose()
-  joined_df = transposed.join(mapping_df)
-  return joined_df
+    mapping_df = mapping_dataframe.copy()
+    mapping_df.set_index('#SampleID', drop=False, inplace=True)
+    transposed = dataframe.transpose()
+    joined_df = transposed.join(mapping_df)
+    return joined_df
 
 
 def load_taxonomy_assignment_file_as_dataframe(tax_assignments_file):
-  tax_file_df = pd.read_csv(tax_assignments_file, sep="\t", header=None, names=['otu','tax','evalue','tax_id'])
+    tax_file_df = pd.read_csv(tax_assignments_file, sep="\t", header=None, names=['otu','tax','evalue','tax_id'])
 
-  if tax_file_df['otu'][0] == "#OTU ID":
-    tax_file_df = pd.read_csv(tax_assignments_file, sep="\t", header=0, names=['otu','tax','evalue','tax_id'])
+    if tax_file_df['otu'][0] == "#OTU ID":
+        tax_file_df = pd.read_csv(tax_assignments_file, sep="\t", header=0, names=['otu','tax','evalue','tax_id'])
 
-  return tax_file_df
+    return tax_file_df
 
 
 class GreenGenesProcessedTaxonomy(object):

@@ -49,6 +49,18 @@ def parse_fastq(fastq_filepath):
             else:
                 raise
         
+
+def find_sequence_by_label(fasta_filepath, label):
+    seq_found = None
+    
+    for desc, seq in parse_fasta(fasta_filepath):
+        if desc == label:
+            seq_found = seq
+            break
+    
+    return seq_found
+
+
 def counts_df_to_repset_fasta(fasta_counts_df, output_fasta, sizes_out=False):
     sums_df = fasta_counts_df.sum(axis=1).sort_values(ascending=False)
     with open(output_fasta, 'w') as f:
@@ -70,6 +82,13 @@ def sha1_to_sequences(sequence_array):
     return seq_df
 
 
+def desc_seq_tuples_to_fasta(desc_seq_tuples, filename):
+    with open(filename, 'w') as f:
+        for desc, seq in desc_seq_tuples:
+            print('>' + desc, file=f)
+            print(seq, file=f)
+    
+    
 def dataframe_to_fasta(sequence_df, filename):
     with open(filename, 'w') as f:
         for row in sequence_df[['sequence']].iterrows():
