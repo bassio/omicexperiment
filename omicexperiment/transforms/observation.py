@@ -63,18 +63,3 @@ class BinObservations(ClusterObservations):
         clusters_df.index.name = 'observation'
 
         ClusterObservations.__init__(self, clusters_df, aggfunc)
-
-
-    def __dapply__(self, experiment):
-        binned_df = ClusterObservations.__dapply__(self, experiment)
-
-        observations_to_keep = experiment.data_df.index.difference(self.clusters_df.index)
-
-        #remove other
-        without_binned_obs_df = experiment.data_df.reindex(observations_to_keep)
-
-        #add 'binned' observations back
-        return concat([without_binned_obs_df, binned_df])
-        groupbywithout_binned_obs_df.loc[self.bin_groupname] = experiment.data_df.loc[self.observations_to_bin].sum()
-
-        return without_binned_obs_df
