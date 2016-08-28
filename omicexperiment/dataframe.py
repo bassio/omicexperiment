@@ -232,14 +232,14 @@ def load_qiime_otu_map_file(otu_map_file):
     return pd.DataFrame.from_records(obs_cluster_tuples, columns=['observation', 'cluster'])
 
     
-def load_taxonomy_dataframe(tax_file_or_tax_df):
-    if isinstance(tax_file_or_tax_df, pd.DataFrame):
-        return tax_file_or_tax_df
-    elif isinstance(tax_file_or_tax_df, str):
-        #assume file path
-        tax_fp = Path(tax_file_or_tax_df)
-        assert( tax_fp.exists() )
-        return tax_as_dataframe(str(tax_fp))
+def load_qiime_taxonomy_assignment_file(tax_assignments_file):
+    tax_file_df = pd.read_csv(tax_assignments_file, sep="\t", header=None, names=['otu','tax','evalue','tax_id'])
+
+    if tax_file_df['otu'][0] == "#OTU ID":
+        tax_file_df = pd.read_csv(tax_assignments_file, sep="\t", header=0, names=['otu','tax','evalue','tax_id'])
+
+    return tax_file_df
+
 
 def load_dataframe(input_file_or_obj, first_col_in_file_as_index=True):
     if isinstance(input_file_or_obj, (str, Path)):

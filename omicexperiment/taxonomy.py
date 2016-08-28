@@ -1,6 +1,11 @@
 from collections import namedtuple
 import pandas as pd
 
+from omicexperiment.dataframe import load_qiime_taxonomy_assignment_file
+
+
+TAXONOMY_RANKS = ('kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species')
+
 TAX_RANKS = ('kingdom', 'phylum', 'class_', 'order', 'family', 'genus', 'species')
 TAX_PREFIXES = ('k__', 'p__', 'c__', 'o__', 'f__', 'g__', 's__')
 
@@ -42,15 +47,6 @@ def add_mapping_dataframe(counts_dataframe, mapping_dataframe):
     transposed = dataframe.transpose()
     joined_df = transposed.join(mapping_df)
     return joined_df
-
-
-def load_taxonomy_assignment_file_as_dataframe(tax_assignments_file):
-    tax_file_df = pd.read_csv(tax_assignments_file, sep="\t", header=None, names=['otu','tax','evalue','tax_id'])
-
-    if tax_file_df['otu'][0] == "#OTU ID":
-        tax_file_df = pd.read_csv(tax_assignments_file, sep="\t", header=0, names=['otu','tax','evalue','tax_id'])
-
-    return tax_file_df
 
 
 class GreenGenesProcessedTaxonomy(object):
@@ -147,7 +143,7 @@ class GreenGenesProcessedTaxonomy(object):
 
 
 def tax_as_tuples(tax_assignments_file):
-    tax_file_df = load_taxonomy_assignment_file_as_dataframe(tax_assignments_file)
+    tax_file_df = load_qiime_taxonomy_assignment_file(tax_assignments_file)
 
     otu_to_taxonomy_tuples = []
 
@@ -176,3 +172,13 @@ def tax_as_dataframe(tax_assignments_file):
     df.set_index('otu', drop=False, inplace=True)
     df['rank_resolution'] = df['rank_resolution'].astype("category", categories=['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'], ordered=True)
     return df
+
+
+def process_taxonomy_dataframe(tax_file_or_tax_df):
+    if isinstance(tax_file_or_tax_df, pd.DataFrame):
+        return tax_file_or_tax_df
+    elif isinstance(tax_file_or_tax_df, str):
+        #assume file path
+        tax_fp = Path(tax_file_or_tax_df)
+        assert( tax_fp.exists() )
+        return tax_as_dataframe(str(tax_fp))

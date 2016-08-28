@@ -2,6 +2,15 @@ import hashlib
 import pandas as pd
 
 
+def parse_fasta_labels(fasta_filepath):
+    with open(fasta_filepath) as f:
+        for l in f:
+            l = l.strip()
+            if l.startswith(">"):
+                desc = l[1:]
+                yield desc
+
+
 def parse_fasta(fasta_filepath):
     
     def _parse_fasta(fasta):
@@ -50,15 +59,21 @@ def parse_fastq(fastq_filepath):
                 raise
         
 
-def find_sequence_by_label(fasta_filepath, label):
+def find_sequence_by_label(fasta_filepaths, label):
     seq_found = None
     
-    for desc, seq in parse_fasta(fasta_filepath):
-        if desc == label:
-            seq_found = seq
-            break
+    if isinstance(fasta_filepaths, str):
+        fasta_filepaths = [fasta_filepaths]
     
-    return seq_found
+    fasta_filepaths = list(fasta_filepaths)
+    
+    for fasta_filepath in fasta_filepaths:
+        for desc, seq in parse_fasta(fasta_filepath):
+            if desc == label:
+                seq_found = seq
+                return seq_found
+    
+    return None
 
 
 def counts_df_to_repset_fasta(fasta_counts_df, output_fasta, sizes_out=False):
@@ -94,8 +109,15 @@ def dataframe_to_fasta(sequence_df, filename):
         for row in sequence_df[['sequence']].iterrows():
             print('>' + row[0], file=f) #identifier in index
             print(row[1][0], file=f) #sequence itself
+
     
+def dict_to_fasta(sequence_dict, filename):
+    with open(filename, 'w') as f:
+        for k, v in sequence_dict.items():
+            print('>' + k, file=f) #identifier in key
+            print(v, file=f) #sequence itself is value
     
+
 #adapted from sqlalchemy's hybrid extension module:
 # Copyright (C) 2005-2016 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
