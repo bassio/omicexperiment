@@ -5,7 +5,7 @@ from pathlib import Path
 from biom import parse_table
 from biom import Table as BiomTable
 from omicexperiment.util import parse_fasta, parse_fastq
-from omicexperiment.taxonomy import tax_as_dataframe
+
 
 def load_biom(biom_filepath):
     with open(biom_filepath) as f:

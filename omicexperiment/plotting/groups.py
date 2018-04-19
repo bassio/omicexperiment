@@ -65,6 +65,9 @@ def return_xlabels_for_groups(tree, group_col):
   
   for path in paths:
     labels.append(path.getnext())
+  
+  for l in group_col.index:
+    labels.append(l)
     
   index_values = group_col.value_counts().index.sort_values()
   
@@ -76,9 +79,9 @@ def return_xlabels_for_groups(tree, group_col):
   if len(group_col[group_col.isnull()]) > 0:
     labels_dict['nan'] = []
   
-  for i, lbl in enumerate(labels):
-    lbl_val = lbl.text
-    key = val = group_col[lbl_val]
+  for i, index_val in enumerate(group_col.index):
+    key = group_col[index_val]
+    lbl = labels[i]
     try:
       labels_dict[key].append(lbl)
     except:

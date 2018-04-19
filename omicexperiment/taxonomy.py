@@ -1,4 +1,6 @@
 from collections import namedtuple
+from pathlib import Path
+
 import pandas as pd
 
 from omicexperiment.dataframe import load_qiime_taxonomy_assignment_file

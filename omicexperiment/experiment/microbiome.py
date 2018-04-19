@@ -78,8 +78,10 @@ class MicrobiomeExperiment(OmicExperiment):
 
         return new_exp
 
-    def with_taxonomy_df(taxonomy_df):
-        pass
+    def with_taxonomy_df(self, new_taxonomy_df):
+        new_exp = self.__class__(self.data_df, self.mapping_df, new_taxonomy_df, self.metadata)
+
+        return new_exp
 
     def to_tsv(self, filepath_or_buf, dataframe='data_df'):
         df = getattr(self, dataframe)

@@ -76,6 +76,24 @@ def find_sequence_by_label(fasta_filepaths, label):
     return None
 
 
+def find_sequences_for_labels(fasta_filepaths, labels):
+    seq_found = None
+    
+    if isinstance(fasta_filepaths, str):
+        fasta_filepaths = [fasta_filepaths]
+    
+    fasta_filepaths = list(fasta_filepaths)
+    
+    lbls = list(labels) #copy list
+    
+    for fasta_filepath in fasta_filepaths:
+        for desc, seq in parse_fasta(fasta_filepath):
+            if desc in lbls:
+                seq_found = seq
+                lbls.remove(desc) #remove from search list to avoid duplication
+                yield (desc, seq_found)    
+
+
 def counts_df_to_repset_fasta(fasta_counts_df, output_fasta, sizes_out=False):
     sums_df = fasta_counts_df.sum(axis=1).sort_values(ascending=False)
     with open(output_fasta, 'w') as f:
@@ -117,7 +135,14 @@ def dict_to_fasta(sequence_dict, filename):
             print('>' + k, file=f) #identifier in key
             print(v, file=f) #sequence itself is value
     
-
+    
+def iterable_tuples_to_fasta(sequence_iter, filename):
+    with open(filename, 'w') as f:
+        for k, v in sequence_iter:
+            print('>' + k, file=f) #identifier in key
+            print(v, file=f) #sequence itself is value
+    
+    
 #adapted from sqlalchemy's hybrid extension module:
 # Copyright (C) 2005-2016 the SQLAlchemy authors and contributors
 # <see AUTHORS file>
