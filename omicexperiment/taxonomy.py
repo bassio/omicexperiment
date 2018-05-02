@@ -2,6 +2,7 @@ from collections import namedtuple
 from pathlib import Path
 
 import pandas as pd
+from pandas.api.types import CategoricalDtype
 
 from omicexperiment.dataframe import load_qiime_taxonomy_assignment_file
 
@@ -13,6 +14,7 @@ TAX_PREFIXES = ('k__', 'p__', 'c__', 'o__', 'f__', 'g__', 's__')
 
 TaxonomyTuple = namedtuple('TaxonomyTuple', TAX_RANKS)
 
+TAXONOMY_OBJECT_INDEX_COLUMNS = ('kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'rank_resolution', 'tax', 'taxhash', 'otu')
 
 def tax_rank(rank):
     if rank == 'class':
@@ -54,11 +56,15 @@ def add_mapping_dataframe(counts_dataframe, mapping_dataframe):
 class GreenGenesProcessedTaxonomy(object):
 
     def __init__(self, tax_string):
-        self.tax_string = tax_string
-
+        self._tax_string_input = tax_string
+        self.tax_string = ";".join(self.tax_tuple_unprocessed)
+    
+    def __hash__(self):
+        return hash(self.tax_tuple_unprocessed)
+    
     @property
     def tax_tuple_unprocessed(self):
-        return tuple(taxon.strip() for taxon in self.tax_string.split(";"))
+        return tuple(taxon.strip() for taxon in self._tax_string_input.split(";"))
 
     @property
     def tax_tuple_no_prefix(self):
@@ -144,8 +150,13 @@ class GreenGenesProcessedTaxonomy(object):
         return taxon_no_prefix in ('', 'unidentified', 'no blast hit', 'unassigned')
 
 
-def tax_as_tuples(tax_assignments_file):
-    tax_file_df = load_qiime_taxonomy_assignment_file(tax_assignments_file)
+def tax_as_tuples(tax_file_or_tax_df):
+    if isinstance(tax_file_or_tax_df, pd.DataFrame):
+        tax_file_df = tax_file_or_tax_df
+    elif isinstance(tax_file_or_tax_df, (str, Path)):
+        tax_fp = Path(str(tax_file_or_tax_df))
+        assert( tax_fp.exists() )
+        tax_file_df = load_qiime_taxonomy_assignment_file(tax_fp)
 
     otu_to_taxonomy_tuples = []
 
@@ -154,29 +165,45 @@ def tax_as_tuples(tax_assignments_file):
 
         taxonomy_obj = GreenGenesProcessedTaxonomy(row[1])
         tax = taxonomy_obj.tax_string
+        taxhash = hash(taxonomy_obj)
         rank_resolution = taxonomy_obj.rank_resolution
         tax_tuple = taxonomy_obj.tax_tuple
 
-        otu_to_taxonomy_tuples.append((tax_tuple.kingdom, tax_tuple.phylum, tax_tuple.class_, tax_tuple.order, tax_tuple.family, tax_tuple.genus, tax_tuple.species, rank_resolution, tax, otu))
+        otu_to_taxonomy_tuples.append((tax_tuple.kingdom, tax_tuple.phylum, tax_tuple.class_, tax_tuple.order, tax_tuple.family, tax_tuple.genus, tax_tuple.species, rank_resolution, tax, taxhash, otu))
 
     return otu_to_taxonomy_tuples
 
 
-def tax_as_index(tax_assignments_file):
-    otu_to_taxonomy_tuples = tax_as_tuples(tax_assignments_file)
-    mi = pd.MultiIndex.from_tuples(otu_to_taxonomy_tuples, names=['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'rank_resolution', 'tax', 'otu'])
+def tax_as_index(tax_file_or_tax_df):
+    otu_to_taxonomy_tuples = tax_as_tuples(tax_file_or_tax_df)
+    mi = pd.MultiIndex.from_tuples(otu_to_taxonomy_tuples, names=TAXONOMY_OBJECT_INDEX_COLUMNS)
     return mi
 
 
-def tax_as_dataframe(tax_assignments_file):
-    otu_to_taxonomy_tuples = tax_as_tuples(tax_assignments_file)
-    df = pd.DataFrame.from_records(otu_to_taxonomy_tuples, columns=['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'rank_resolution', 'tax', 'otu'])
+def tax_as_dataframe(tax_file_or_tax_df):
+    otu_to_taxonomy_tuples = tax_as_tuples(tax_file_or_tax_df)
+    df = pd.DataFrame.from_records(otu_to_taxonomy_tuples, columns=TAXONOMY_OBJECT_INDEX_COLUMNS)
     df.set_index('otu', drop=False, inplace=True)
-    df['rank_resolution'] = df['rank_resolution'].astype("category", categories=['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'], ordered=True)
+    
+    tax_category_type = CategoricalDtype(categories=['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species'],
+                                         ordered=True)
+    
+    df['rank_resolution'] = df['rank_resolution'].astype(tax_category_type)
+    
     return df
 
 
 def process_taxonomy_dataframe(tax_file_or_tax_df):
+    if isinstance(tax_file_or_tax_df, pd.DataFrame):
+        return tax_file_or_tax_df
+    elif isinstance(tax_file_or_tax_df, str):
+        #assume file path
+        tax_fp = Path(tax_file_or_tax_df)
+        assert( tax_fp.exists() )
+        return tax_as_dataframe(str(tax_fp))
+
+
+def process_taxonomy_assignment_dataframe(tax_df):
     if isinstance(tax_file_or_tax_df, pd.DataFrame):
         return tax_file_or_tax_df
     elif isinstance(tax_file_or_tax_df, str):

@@ -52,7 +52,8 @@ install_requires = [
     'biom-format >= 2.1.5',
     'lxml>=3.5.0',
     'pygal >= 2.1.1',
-    'scikit-bio==0.4.2']
+    'scikit-bio==0.4.2',
+    'pyyaml']
 
 
 setup(name=package_name,
