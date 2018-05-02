@@ -83,7 +83,7 @@ class TaxonomyAssignment(Qiime2ArtifactFile):
     def to_dataframe(self):
         tax_df = self.load_data()
         tax_df.rename(columns={'Feature ID': 'otu', 'Taxon': 'tax'}, inplace=True)
-        tax_df.set_index('otu', inplace=True)
+        tax_df.set_index('otu', drop=False, inplace=True)
         return tax_df
     
 
