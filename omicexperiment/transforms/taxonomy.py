@@ -26,7 +26,7 @@ class TaxonomyGroupBy(GroupByTransform):
         groupby_df = df.groupby(taxlevels_to_rank).sum().reset_index()
 
         #drop extra levels (now columns)
-        groupby_df.drop([rnk for rnk in taxlevels_to_rank if rnk != rank], axis=1, inplace=True)
+        groupby_df.drop([rnk for rnk in taxlevels_to_rank if rnk != rank] + ['taxhash'], axis=1, inplace=True)
         try:
             groupby_df.drop(['otu'], axis=1, inplace=True)
         except ValueError: #not found

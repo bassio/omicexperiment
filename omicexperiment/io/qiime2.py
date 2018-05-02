@@ -60,7 +60,7 @@ class BiomTable(Qiime2ArtifactFile):
     
     def to_dataframe(self):
         biom_table = self.load_data()
-        return biom_table.to_dataframe().to_dense().astype(int)
+        return biom_table.to_dataframe().to_dense()
     
 
 
