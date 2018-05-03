@@ -36,6 +36,7 @@ class Rarefaction(Transform):
 
         sampled_series = series.sample(n, replace=True, weights=series)
         sampled_value_counts = sampled_series.index.value_counts()
+        sampled_value_counts.name = series_name
 
         if num_reps == 1:
             return sampled_value_counts
