@@ -204,10 +204,10 @@ def process_taxonomy_dataframe(tax_file_or_tax_df):
 
 
 def process_taxonomy_assignment_dataframe(tax_df):
-    if isinstance(tax_file_or_tax_df, pd.DataFrame):
-        return tax_file_or_tax_df
-    elif isinstance(tax_file_or_tax_df, str):
+    if isinstance(tax_df, pd.DataFrame):
+        return tax_df
+    elif isinstance(tax_df, str):
         #assume file path
-        tax_fp = Path(tax_file_or_tax_df)
+        tax_fp = Path(tax_df)
         assert( tax_fp.exists() )
         return tax_as_dataframe(str(tax_fp))

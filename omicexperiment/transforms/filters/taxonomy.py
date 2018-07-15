@@ -1,6 +1,5 @@
 import pandas as pd
 from omicexperiment.transforms.transform import Filter, AttributeFilter, AttributeFlexibleOperatorMixin
-from omicexperiment.transforms.taxonomy import TaxonomyGroupBy
 
 
 class TaxonomyAttributeFilter(AttributeFilter, AttributeFlexibleOperatorMixin):
@@ -13,16 +12,3 @@ class TaxonomyAttributeFilter(AttributeFilter, AttributeFlexibleOperatorMixin):
         filtered_df = self.__dapply__(experiment)
         return experiment.with_data_df(filtered_df)
         
-
-class Taxonomy(object):
-    groupby = TaxonomyGroupBy
-    kingdom = TaxonomyAttributeFilter(attribute='kingdom')
-    phylum = TaxonomyAttributeFilter(attribute='phylum')
-    class_ = TaxonomyAttributeFilter(attribute='class')
-    order = TaxonomyAttributeFilter(attribute='order')
-    family = TaxonomyAttributeFilter(attribute='family')
-    genus = TaxonomyAttributeFilter(attribute='genus')
-    species = TaxonomyAttributeFilter(attribute='species')
-    otu = TaxonomyAttributeFilter(attribute='otu')
-    rank_resolution = TaxonomyAttributeFilter(attribute='rank_resolution')
-    

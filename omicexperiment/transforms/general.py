@@ -18,7 +18,32 @@ class RelativeAbundance(Transform):
         rel_counts = cls.__dapply__(experiment)
         return experiment.with_data_df(rel_counts)
 
+class MeanRelativeAbundance(Transform):
+    @classmethod
+    def __dapply__(cls, experiment):
+        rel_counts = RelativeAbundance.__dapply__(experiment)
+        mra_df= rel_counts.sum(axis=1).sort_values(ascending=False).to_frame(name="mra")
+        return mra_df
 
+    @classmethod
+    def __eapply__(cls, experiment):
+        mra_df = cls.__dapply__(experiment)
+        return experiment.with_data_df(mra_df)
+
+class Prevalence(Transform):
+    def __init__(self, obs_presence_cuttoff=0):
+        self.obs_presence_cuttoff = obs_presence_cuttoff
+        
+    def __dapply__(self, experiment):
+        present_absent_df = (experiment.data_df > self.obs_presence_cutoff)
+        obs_prevalence_series = present_absent_df.astype(int).apply(lambda c: c.sum() / c.count() * 100, axis=1).sort_values(ascending=False)
+        return obs_prevalence_series.to_frame("prevalence")
+
+    def __eapply__(self, experiment):
+        prevalence_df = self.__dapply__(experiment)
+        return experiment.with_data_df(prevalence_df)
+
+    
 class Rarefaction(Transform):
     def __init__(self, n, num_reps=1):
         self.n = n

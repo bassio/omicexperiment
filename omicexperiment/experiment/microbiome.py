@@ -1,10 +1,13 @@
 from omicexperiment.experiment.experiment import OmicExperiment
 from omicexperiment.taxonomy import tax_as_index, tax_as_dataframe, process_taxonomy_dataframe
-from omicexperiment.transforms.filters import Taxonomy
+from omicexperiment.transforms import proxy
 from omicexperiment.rarefaction import rarefy_dataframe
 
 
 class MicrobiomeExperiment(OmicExperiment):
+    
+    Taxonomy = proxy.Taxonomy()
+    
     def __init__(self, data_df, mapping_df = None, taxonomy_assignment_file=None, metadata={}):
         OmicExperiment.__init__(self, data_df, mapping_df, metadata)
         self.__init_taxonomy(taxonomy_assignment_file)
@@ -13,7 +16,6 @@ class MicrobiomeExperiment(OmicExperiment):
         self.taxonomy_assignment_file = taxonomy_assignment_file
         self._tax_df = process_taxonomy_dataframe(taxonomy_assignment_file)
 
-        self.Taxonomy = Taxonomy
 
     def load_tax_assignment(self, taxonomy_assignment_file):
         self.taxonomy_assignment_file = taxonomy_assignment_file

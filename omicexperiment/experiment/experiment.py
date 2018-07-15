@@ -3,7 +3,7 @@ import functools
 from collections import OrderedDict
 import numpy as np
 from pandas import Series, DataFrame
-from omicexperiment.transforms import filters
+from omicexperiment.transforms import proxy
 from omicexperiment.plotting.plot_pygal import plot_table, return_plot, return_plot_tree, plot_to_file
 from omicexperiment.plotting.groups import group_plot_tree
 from omicexperiment.rarefaction import rarefy_dataframe
@@ -18,15 +18,14 @@ class Experiment(object):
 
 
 class OmicExperiment(Experiment):
+    Sample = proxy.Sample()
+    Observation = proxy.Observation()
+    
     def __init__(self, data_df, mapping_df = None, metadata={}):
         Experiment.__init__(self, data_df, metadata)
         #self.data_df = load_dataframe(data_df)
 
         self.mapping_df = load_dataframe(mapping_df, first_col_in_file_as_index=True)
-
-
-        self.Sample = filters.Sample #add in mapping file variables here for the samples
-        self.Observation = filters.Observation #add in observation variables here
 
 
     def apply(self, transforms, axis=0):

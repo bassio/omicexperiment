@@ -1,6 +1,6 @@
 import pandas as pd
-from omicexperiment.transforms.transform import Filter, AttributeFilter, GroupByTransform, FlexibleOperatorMixin, AttributeFlexibleOperatorMixin
-from omicexperiment.transforms.sample import SampleGroupBy
+from omicexperiment.transforms.transform import Filter, AttributeFilter, GroupByTransform, FlexibleOperatorMixin, AttributeFlexibleOperatorMixin, TransformObjectsProxy
+from omicexperiment.transforms.sample import SampleGroupBy, SampleSumCounts
 
 
 class SampleMinCount(Filter):
@@ -21,12 +21,13 @@ class SampleMaxCount(Filter):
             return df[criteria.index[criteria]]
 
 
-class SampleCount(Filter, FlexibleOperatorMixin):
+class SampleCount(FlexibleOperatorMixin, Filter):
     def __dapply__(self, experiment):
         _op = self._op_function(experiment.data_df.sum())
         criteria = _op(self.value)
         criteria = _op(self.value)
         return experiment.data_df.reindex(columns=criteria.index[criteria])
+       
        
 class SampleAttributeFilter(AttributeFilter, AttributeFlexibleOperatorMixin):
     def __dapply__(self, experiment):
@@ -35,22 +36,15 @@ class SampleAttributeFilter(AttributeFilter, AttributeFlexibleOperatorMixin):
         return experiment.data_df.reindex(columns=criteria.index[criteria])
         
 
-class SampleSumCounts(Filter):
-    def __dapply__(self, experiment):
-        return experiment.data_df.sum()
-    
-
-class Sample(object):
+class Sample(TransformObjectsProxy):
     #not_in = 
     #in_
     count = SampleCount()
-    #min_count = SampleMinCount() #?TO DEPRECATE
-    #max_count = SampleMaxCount() #?TO DEPRECATE
     
     att = SampleAttributeFilter()
     c = SampleAttributeFilter()
     
-    groupby = SampleGroupBy
+    groupby = SampleGroupBy()
     
     sum_counts = SampleSumCounts()
     

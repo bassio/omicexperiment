@@ -1,17 +1,45 @@
 
+
+
+class TransformObjectsProxy(object):
+    def __init__(self, experiment=None):
+        self.experiment = experiment
+
+    def __get__(self, instance, owner):
+        #print("getting TransformObjectsProxy")
+        self.experiment = instance
+        return self
+    
+    
 class Transform(object):
     def __dapply__(self, experiment):
         return NotImplementedError
 
     def __eapply__(self, experiment):
         return NotImplementedError
+    
+    def __get__(self, instance, owner):
+        if isinstance(instance, TransformObjectsProxy):
+            #print("instance is a TransformObjectsProxy")
+            return self.__eapply__(instance.experiment) #experiment attribute of the TranformObjectsProxy
+            
+        return instance.__dict__[self.name]
+    
+    def __set__(self, instance, value):
+        instance.__dict__[self.name] = value
+    
+    def __set_name__(self, owner, name):
+        self.name = name
 
 
 class Filter(Transform):
     def __init__(self, operator=None, value=None):
         self.operator = operator
         self.value = value
-
+    
+    def __get__(self, instance, owner):
+        return self
+    
     def __lt__(self, other):
         return self.__class__('__lt__', other)
 

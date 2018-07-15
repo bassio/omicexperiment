@@ -1,5 +1,6 @@
 import pandas as pd
-from omicexperiment.transforms.transform import Filter
+from omicexperiment.transforms.transform import TransformObjectsProxy, Transform, Filter
+from omicexperiment.transforms.observation import ObservationSumCounts
 
 class ObservationMinCount(Filter):
     def __dapply__(self, experiment):
@@ -32,16 +33,12 @@ class ObservationMinSamples(Filter):
             absence_presence = (df > 0)
             return df[absence_presence.sum(axis=1) >= self.value]
 
-            
-class ObservationSumCounts(Filter):
-    def __dapply__(self, experiment):
-        return experiment.data_df.sum(axis=1)
 
-
-class Observation(object):
+class Observation(TransformObjectsProxy):
     min_count = ObservationMinCount()
     min_count_fraction = ObservationMinCountFraction()
-    min_samples = ObservationMinSamples()
     max_count = ObservationMaxCount()
+    min_samples = ObservationMinSamples()
     
     sum_counts = ObservationSumCounts()
+

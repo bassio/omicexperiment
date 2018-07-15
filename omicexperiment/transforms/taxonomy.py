@@ -1,9 +1,11 @@
-from omicexperiment.transforms.transform import Transform, GroupByTransform
+import numpy as np
+from omicexperiment.transforms.transform import TransformObjectsProxy, Transform, GroupByTransform
 from omicexperiment.taxonomy import tax_as_dataframe
 
 
 class TaxonomyGroupBy(GroupByTransform):
     TAX_RANKS = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species']
+    TAXONOMY_DATAFRAME_COLUMNS = ['kingdom', 'phylum', 'class', 'order', 'family', 'genus', 'species', 'rank_resolution', 'tax', 'taxhash', 'otu']
 
     def __init__(self, rank, collapse=True):
         self.rank = rank
@@ -15,23 +17,41 @@ class TaxonomyGroupBy(GroupByTransform):
         if highest_res_rank == 'class_':
             highest_res_rank = 'class'
         return TAX_RANKS[:TAX_RANKS.index(highest_res_rank)+1]
-
+    
+    
+    def __get__(self, instance, owner):
+        if isinstance(instance, TransformObjectsProxy):
+            self.experiment = instance.experiment
+            return self
+        else:
+            return super().__get__(instance, owner)
+    
+    def __call__(self, rank, collapse=True):
+        
+        if hasattr(self, 'experiment'):
+            new_instance = self.__class__(rank, collapse)
+            new_instance.experiment = self.experiment
+            return new_instance.__eapply__(self.experiment)
+            #return self.__eapply__(self.experiment)
+        else:
+            return self
+    
+    
     def __dapply__(self, experiment):
         rank = self.rank
         taxlevels_to_rank = TaxonomyGroupBy.tax_rank_levels(rank)
 
         df = experiment._counts_with_tax()
+        df = df.set_index(TaxonomyGroupBy.TAXONOMY_DATAFRAME_COLUMNS)
 
         #groupby_df
-        groupby_df = df.groupby(taxlevels_to_rank).sum().reset_index()
-
+        groupby_df = df.groupby(taxlevels_to_rank).sum()
+        
         #drop extra levels (now columns)
-        groupby_df.drop([rnk for rnk in taxlevels_to_rank if rnk != rank] + ['taxhash'], axis=1, inplace=True)
-        try:
-            groupby_df.drop(['otu'], axis=1, inplace=True)
-        except ValueError: #not found
-            pass
-
+        current_index_levels = [l.name for l in groupby_df.index.levels]
+        levels_to_drop = [rnk for rnk in current_index_levels if rnk != rank]
+        groupby_df.reset_index(level=levels_to_drop, drop=True, inplace=True)
+        
         #further collapse similarly named ranks (e.g. "k__unidentified (Unassigned)")
         if self.collapse:
             groupby_df = groupby_df.groupby(rank).sum()

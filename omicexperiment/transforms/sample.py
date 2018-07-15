@@ -1,5 +1,5 @@
 import numpy as np
-from omicexperiment.transforms.transform import Transform
+from omicexperiment.transforms.transform import TransformObjectsProxy, Transform
 
 
 class KeepSamples(Transform):
@@ -28,16 +28,48 @@ class ExcludeSamples(Transform):
         return experiment.with_data_df(after_exc)
 
 
+_index = object()
+
+
 class SampleGroupBy(Transform):
-    def __init__(self, variable, aggfunc=np.mean):
+    def __init__(self, variable=_index, aggfunc=np.mean):
         self.variable = variable
         self.aggfunc = aggfunc
     
+    def __get__(self, instance, owner):
+        if isinstance(instance, TransformObjectsProxy):
+            self.experiment = instance.experiment
+            return self
+        else:
+            return super().__get__(instance, owner)
+        
+
+    def __call__(self, variable, aggfunc=np.mean):
+        #self.variable = variable
+        #self.aggfunc = aggfunc
+        
+        if hasattr(self, 'experiment'):
+            new_instance = self.__class__(variable, aggfunc)
+            new_instance.experiment = self.experiment
+            return new_instance.__eapply__(self.experiment)
+            #return self.__eapply__(self.experiment)
+        else:
+            return self
+    
     def groupby(self, experiment):
-        mapping_df = experiment.mapping_df.copy()
+        mapping_df = experiment.mapping_df
         transposed = experiment.data_df.transpose()
-        joined_df = transposed.join(mapping_df[[self.variable]])
+        
+        if self.variable is _index:
+            index_df = mapping_df.index.to_frame()
+            joined_df = transposed.join(index_df)
+            self.variable = index_df.columns
+        else:
+            joined_df = transposed.join(mapping_df[[self.variable]])
+        
+        print(self.variable)
         df_groupby_obj = joined_df.groupby(self.variable)
+        print(df_groupby_obj)
         return df_groupby_obj
     
     def __dapply__(self, experiment):
@@ -52,3 +84,13 @@ class SampleGroupBy(Transform):
     def __eapply__(self, experiment):
         retransposed = self.__dapply__(experiment)
         return experiment.with_data_df(retransposed)
+
+
+class SampleSumCounts(Transform):
+    def __dapply__(self, experiment):
+        return experiment.data_df.sum().to_frame("obs_count").transpose()
+    
+    def __eapply__(self, experiment):
+        sums_df = self.__dapply__(experiment)
+        return experiment.with_data_df(sums_df)
+
