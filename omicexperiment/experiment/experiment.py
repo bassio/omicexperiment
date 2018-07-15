@@ -128,7 +128,8 @@ class OmicExperiment(Experiment):
         new_exp = self.__class__(new_data_df, new_mapping_df)
         return new_exp
 
-    def describe(self, as_dict=False):
+
+    def description(self, as_dict=False):
         desc = \
         (""
         "Num samples: {num_samples}\n"
@@ -172,7 +173,10 @@ class OmicExperiment(Experiment):
             return d
         else:
             return desc.format(**d)
-
+    
+    def describe(self):
+        print(self.description())
+        
     def compare(self, other_exp):
         self_desc = self.describe(as_dict=True)
         other_desc = other_exp.describe(as_dict=True)
