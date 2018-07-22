@@ -54,7 +54,10 @@ class MicrobiomeExperiment(OmicExperiment):
     def _counts_with_tax(self):
         joined_df = self.taxonomy_df.join(self.data_df, how='right')
         return joined_df
-
+    
+    def _metadata_with_data_df(self):
+        return self.mapping_df.join(self.counts_df.T)
+        
 
     def __getitem__(self, value):
         return self.apply(value)

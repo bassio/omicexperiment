@@ -67,9 +67,7 @@ class SampleGroupBy(Transform):
         else:
             joined_df = transposed.join(mapping_df[[self.variable]])
         
-        print(self.variable)
         df_groupby_obj = joined_df.groupby(self.variable)
-        print(df_groupby_obj)
         return df_groupby_obj
     
     def __dapply__(self, experiment):
