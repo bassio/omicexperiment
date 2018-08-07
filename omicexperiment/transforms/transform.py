@@ -1,6 +1,14 @@
 
 
+class ProxiedTransformMixin(object):
+    def __get__(self, instance, owner):
+        if isinstance(instance, TransformObjectsProxy):
+            self.experiment = instance.experiment
+            return self
+        else:
+            return super().__get__(instance, owner)
 
+    
 class TransformObjectsProxy(object):
     def __init__(self, experiment=None):
         self.experiment = experiment

@@ -22,3 +22,5 @@ class ClusterOTUs(ClusterObservations):
     def from_qiime_otu_map_file(cls, otu_map_file):
         clusters_df = load_qiime_otu_map_file(otu_map_file)
         return cls(clusters_df)
+
+

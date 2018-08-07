@@ -43,7 +43,14 @@ class BetaDiversity(Transform):
     def __dapply__(self, experiment):
         otu_ids = experiment.data_df.index
         df = experiment.data_df.transpose()
-        dm = beta_diversity(self.distance_metric, counts=df.as_matrix(), otu_ids=otu_ids, **self.kwargs)
+        try:
+            dm = beta_diversity(self.distance_metric, counts=df.as_matrix(), otu_ids=otu_ids, **self.kwargs)
+        except TypeError as e:
+            if 'takes no keyword arguments' in str(e):
+                dm = beta_diversity(self.distance_metric, counts=df.as_matrix(), **self.kwargs)
+            else:
+                raise(e)
+            
         distance_matrix_df = pd.DataFrame(dm.data, index=df.index, columns=df.index)
         return distance_matrix_df
 

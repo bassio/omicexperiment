@@ -1,6 +1,6 @@
 from omicexperiment.transforms.transform import TransformObjectsProxy, Transform
 
-from omicexperiment.transforms.sample import SampleGroupBy, SampleSumCounts
+from omicexperiment.transforms.sample import SampleGroupBy, SampleSumCounts, KeepSamples
 from omicexperiment.transforms.filters.sample import SampleAttributeFilter, SampleCount
 
 from omicexperiment.transforms.observation import ObservationSumCounts
@@ -21,6 +21,7 @@ class Sample(TransformObjectsProxy):
     groupby = SampleGroupBy()
     
     sum_counts = SampleSumCounts()
+    
 
 
 

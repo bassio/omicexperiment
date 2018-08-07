@@ -144,3 +144,40 @@ class AbundanceFilteringWangEtAl(ClusterObservations):
     def __eapply__(cls, experiment):
         filtered_df = cls.__dapply__(experiment)
         return experiment.with_data_df(filtered_df)
+
+
+class AbundancePrevalenceStatistics(Transform):
+    def __init__(self, absence_presence_cutoff=1):
+        self.absence_presence_cutoff = absence_presence_cutoff
+    
+    def __dapply__(self, experiment):
+        rel_abund_df = experiment.counts_df.sum(axis=1).sort_values(ascending=False).to_frame(name="mean_relative_abundance")
+        rel_abund_df = rel_abund_df.apply(lambda c: c / c.sum() * 100, axis=0)
+        
+        absence_presence_cutoff = self.absence_presence_cutoff
+        prev_df = (experiment.counts_df >= absence_presence_cutoff).astype(int).apply(lambda c: c.sum() / c.count() * 100, axis=1).sort_values(ascending=False).to_frame("prevalence")
+        
+        abund_prev_df = rel_abund_df.join(prev_df)
+        
+        return abund_prev_df
+
+    def __eapply__(self, experiment):
+        new_data_df = self.__dapply__(experiment)
+        return experiment.with_data_df(new_data_df)
+
+
+class AbundancePrevalenceRankStatistics(AbundancePrevalenceStatistics):
+    def __init__(self, absence_presence_cutoff=1, ascending=False):
+        super().__init__(absence_presence_cutoff)
+        self.ascending = ascending
+    
+    def __dapply__(self, experiment):
+        abund_prev_df = super().__dapply__(experiment)
+        ranked_abund_df = abund_prev_df['mean_relative_abundance'].sort_values(ascending=self.ascending).rank(ascending=self.ascending).to_frame()
+        ranked_prev_df = abund_prev_df['prevalence'].sort_values(ascending=self.ascending).rank(ascending=self.ascending).to_frame()
+        joined_ranked_df = ranked_abund_df.join(ranked_prev_df)
+        if self.ascending:
+            return joined_ranked_df.iloc[::-1] #reverse the dataframe
+        else:
+            return joined_ranked_df
+        

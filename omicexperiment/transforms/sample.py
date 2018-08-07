@@ -1,8 +1,8 @@
 import numpy as np
-from omicexperiment.transforms.transform import TransformObjectsProxy, Transform
+from omicexperiment.transforms.transform import TransformObjectsProxy, Transform, ProxiedTransformMixin
 
 
-class KeepSamples(Transform):
+class KeepSamples(Transform, ProxiedTransformMixin):
     def __init__(self, sample_names):
         self.sample_names = list(sample_names)
     
