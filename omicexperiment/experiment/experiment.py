@@ -84,15 +84,19 @@ class OmicExperiment(Experiment):
         plot = return_plot(self.data_df)
         return return_plot_tree(plot)
 
-    def plot(self, outputfile=None):
-        plot = self.get_plot()
-        tree = self.get_plot_tree()
+    def plot(self, backend='pygal', outputfile=None):
+        if backend == 'pygal':
+            plot = self.get_plot()
+            tree = self.get_plot_tree()
 
-        if outputfile is not None:
-            plot_to_file(plot, tree, outputfile)
+            if outputfile is not None:
+                plot_to_file(plot, tree, outputfile)
 
-        return tree
-
+            return tree
+        elif backend == 'matplotlib':
+            from omicexperiment.plotting.plot_matplotlib import taxa_bar_plot
+            return taxa_bar_plot(self.data_df)
+        
     def plot_groups(self, mapping_group_col, outputfile=None, **kwargs):
         if isinstance(mapping_group_col, str):
             group_col = self.mapping_df[mapping_group_col]
@@ -104,6 +108,22 @@ class OmicExperiment(Experiment):
 
         return tree
 
+    def plot_interactive(self):
+        from omicexperiment.plotting.plot_bokeh import plot_interactive
+        fig = plot_interactive(self.data_df)
+        from bokeh.io import show, output_notebook
+        output_notebook()
+        show(fig)
+        return fig
+
+    def plot_matplobli(self):
+        from omicexperiment.plotting.plot_bokeh import plot_interactive
+        fig = plot_interactive(self.data_df)
+        from bokeh.io import show, output_notebook
+        output_notebook()
+        show(fig)
+        return fig
+                
     def groupby(self, variable, aggfunc=np.mean):
         from omicexperiment.transforms.sample import SampleGroupBy
         return self.apply(SampleGroupBy(variable, aggfunc))

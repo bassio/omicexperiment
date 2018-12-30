@@ -75,7 +75,6 @@ class BinObservations(ClusterObservations):
         ClusterObservations.__init__(self, clusters_df, aggfunc)
 
 
-
 class AbundanceFilteringWangEtAl(ClusterObservations):
     
     @staticmethod
@@ -181,3 +180,29 @@ class AbundancePrevalenceRankStatistics(AbundancePrevalenceStatistics):
         else:
             return joined_ranked_df
         
+
+class TopAbundantObservations(Transform):
+    def __init__(self, n):
+            self.n = n
+    
+    @staticmethod
+    def top_abundant_taxa(experiment, n):
+        abund_prev_df = experiment.apply(AbundancePrevalenceStatistics()).data_df
+        abund_series = abund_prev_df['mean_relative_abundance']
+        
+        top_taxa = list(abund_series.head(n).index)
+        
+        return top_taxa
+
+    def __dapply__(self, experiment):
+        top_taxa = TopAbundantObservations.top_abundant_taxa(experiment, self.n)
+        other_taxa = list(experiment.data_df.index.difference(top_taxa))
+        
+        experiment_other = experiment.apply(BinObservations(other_taxa, groupnames='Other'))
+        
+        return  experiment_other.data_df
+    
+    def __eapply__(self, experiment):
+        new_data_df = self.__dapply__(experiment)
+        return experiment.with_data_df(new_data_df)
+

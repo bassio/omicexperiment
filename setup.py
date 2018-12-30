@@ -53,7 +53,8 @@ install_requires = [
     'lxml>=3.5.0',
     'pygal >= 2.1.1',
     'scikit-bio==0.4.2',
-    'pyyaml']
+    'pyyaml',
+    'bokeh==0.13.0']
 
 
 setup(name=package_name,

@@ -138,3 +138,24 @@ class NewickTree(Qiime2ArtifactFile):
         
         return df_nodes
     
+
+
+class DistanceMatrix(Qiime2ArtifactFile):
+    __data_format__ = 'DistanceMatrixDirectoryFormat'
+    __semantic_type__ = 'DistanceMatrix'
+    __singlefiledir_filename__ = 'distance-matrix.tsv'
+    
+    @property
+    def __data_path__(self):
+        return str(Path(self.__id__) / 'data' / self.__singlefiledir_filename__)
+    
+    def load_data(self):
+        with self.__zipfile__ as myzip:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                extracted_file_pth_str = myzip.extract(self.__data_path__, tmpdir)
+                return read_csv(extracted_file_pth_str, sep="\t", index_col=0)
+    
+    def to_dataframe(self):
+        dm_df = self.load_data()
+        return dm_df
+    
